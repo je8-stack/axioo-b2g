@@ -23,9 +23,16 @@
   signInWithEmailAndPassword,
   onAuthStateChanged,
   signOut,
-  sendPasswordResetEmail
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+  sendPasswordResetEmail,
+ } 
+from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
+      import {
+  getFirestore,
+  collection,
+  getDocs
+ } 
+from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
       // Firebase Configuration Proyek Axioo B2G Anda
       const firebaseConfig = {
         apiKey: "AIzaSyCAy5igER74zBCaAHuwQRFNe8xfbiNCQDw",
@@ -43,8 +50,22 @@
       
       // Inisialisasi Firebase Auth Layanan Cloud
       const auth = getAuth(app);
+      const db = getFirestore(app);
 
-      // Fungsi Eksekusi Validasi Login ke Cloud
+      async function loadTenderData() {
+          try {
+              const snapshot = await getDocs(collection(db, "tenders"));
+              const data = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+              const container = document.getElementById("tenderContainer");
+              if (!container) return;
+              container.innerHTML = data.length
+                ? data.map(t => `<div class="border rounded-lg p-4"><h3 class="font-bold">${t.title || "Tender"}</h3><p>${t.description || ""}</p></div>`).join("")
+                : '<div class="text-gray-500">Belum ada data tender.</div>';
+          } catch(e) {
+              console.error("Tender load error", e);
+          }
+      }
+// Fungsi Eksekusi Validasi Login ke Cloud
       
 async function handleFirebaseLogin() {
     const email = document.getElementById("loginEmail").value;
@@ -104,14 +125,18 @@ async function handlePasswordReset() {
           const mainContent = document.getElementById("mainContent");
 
           if (user) {
-              // Jika user valid (ada di daftar Firebase Auth), buka enkripsi halaman utama
-              loginOverlay.classList.add("hidden");
-              mainContent.classList.remove("hidden");
-          } else {
-              // Jika belum login atau sesi habis, kunci total halaman utama kembali
-              loginOverlay.classList.remove("hidden");
-              mainContent.classList.add("hidden");
-          }
+    // Jika user valid (ada di daftar Firebase Auth), buka enkripsi halaman utama
+    loginOverlay.classList.add("hidden");
+    mainContent.classList.remove("hidden");
+
+    // Load data tender dari Firestore
+    loadTenderData();
+
+} else {
+    // Jika belum login atau sesi habis, kunci total halaman utama kembali
+    loginOverlay.classList.remove("hidden");
+    mainContent.classList.add("hidden");
+}
       });
 
       // Hubungkan fungsi ke elemen interaktif DOM (Scope type="module" terisolasi)
@@ -272,12 +297,33 @@ async function handlePasswordReset() {
                 </div>
             </div>
 
-            <!-- PRODUCT GRID (Responsive Fill-In: 1 Kolom Mobile, 2 Kolom Tablet, 3 Kolom Desktop) -->
-            <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
-            </div>
+            <!-- PRODUCT GRID -->
+<div id="productGrid"
+class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
+</div>
 
-            <!-- OPERATIONAL MODULE CARDS (Responsive Fill-In: 1 Kolom Mobile, 2 Kolom Tablet, 4 Kolom Laptop) -->
-            <section class="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
+<!-- TENDER INTELLIGENCE -->
+<section id="tender-monitor"
+class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
+
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">
+            Tender Intelligence
+        </h2>
+
+        <span class="text-xs text-gray-500">
+            Data Crawling: Inaproc
+        </span>
+    </div>
+
+    <div id="tenderContainer"
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    </div>
+
+</section>
+
+<!-- OPERATIONAL MODULE CARDS -->
+<section class="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
                 <!-- Project Lead/Status -->
                 <div id="project-status" class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm scroll-mt-24 border-t-4 border-t-blue-800 flex flex-col justify-between w-full">
                     <div>
@@ -331,7 +377,7 @@ async function handlePasswordReset() {
             <section id="download-center" class="mt-12 sm:mt-16 bg-white border border-gray-200 rounded-xl p-5 sm:p-8 shadow-sm scroll-mt-24 w-full">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-4 mb-6 gap-2">
                     <div>
-                        <h2 class="text-lg sm:text-xl font-bold text-gray-900">Pusat File & Dokumen Kerja Distributor</h2>
+                        <h2 class="text-lg sm:text-xl font-bold text-gray-900">Documents Center</h2>
                         <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Unduh berkas induk resmi instansi untuk lampiran pengadaan barang/jasa.</p>
                     </div>
                     <span class="text-[11px] text-gray-400 font-mono">Arsip Siklus: Mei 2026</span>
@@ -414,6 +460,7 @@ async function handlePasswordReset() {
 
     <!-- JAVASCRIPT RUNTIME ENGINE -->
     <script>
+
         const productsData = [
           { "name": "MyBook Pro E1 (8N2)", "type": "Notebook", "tkdn": "48.68%", "processor": "N4500", "ram": "8GB", "storage": "256 GB SSD", "screen": "14\"", "os": "Win 11", "status": "READY STOCK / READY RAKIT", "noSertif": "11624/SJ-IND.8/E-TKDN/10/2024", "statusTayang": "Tayang", "linkLKPP": "https://penyedia.inaproc.id/master-products/1cdd36af-1ee4-41d6-aacc-bea33e924d19", "etalase": "Master Produk" },
           { "name": "MyBook Pro E1 (8N5)", "type": "Notebook", "tkdn": "47.96%", "processor": "N4500", "ram": "8GB", "storage": "512 GB SSD", "screen": "14\"", "os": "Win 11", "status": "", "noSertif": "11630/SJ-IND.8/E-TKDN/10/2024", "statusTayang": "Tayang", "linkLKPP": "https://penyedia.inaproc.id/master-products/edacf4cd-da52-41aa-906a-3e13a85c2d1f", "etalase": "Master Produk" },
