@@ -18,7 +18,13 @@
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
       import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js";
       // Impor fungsi autentikasi modular v12 yang dibutuhkan
-      import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+      import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
       // Firebase Configuration Proyek Axioo B2G Anda
       const firebaseConfig = {
@@ -39,29 +45,53 @@
       const auth = getAuth(app);
 
       // Fungsi Eksekusi Validasi Login ke Cloud
-      async function handleFirebaseLogin() {
-          const email = document.getElementById("loginEmail").value;
-          const password = document.getElementById("loginPassword").value;
-          const errorElement = document.getElementById("loginErrorMessage");
+      
+async function handleFirebaseLogin() {
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+    const errorElement = document.getElementById("loginErrorMessage");
 
-          if(!email || !password) {
-              errorElement.innerText = "Mohon isi email dan password secara lengkap.";
-              errorElement.classList.remove("hidden");
-              return;
-          }
+    if (!email || !password) {
+        errorElement.innerText = "Mohon isi email dan password secara lengkap.";
+        errorElement.classList.remove("hidden");
+        return;
+    }
 
-          try {
-              errorElement.classList.add("hidden");
-              // Jalankan verifikasi ke server cloud Firebase
-              await signInWithEmailAndPassword(auth, email, password);
-          } catch (error) {
-              // Tangkap response kegagalan kredensial
-              errorElement.innerText = "Akses ditolak: Email/Password salah atau akun belum dikonfirmasi.";
-              errorElement.classList.remove("hidden");
-          }
-      }
+    try {
+        errorElement.classList.add("hidden");
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        errorElement.innerText = "Akses ditolak: Email/Password salah atau akun belum dikonfirmasi.";
+        errorElement.classList.remove("hidden");
+    }
+}
 
-      // Fungsi Eksekusi Keluar Sistem (Logout)
+async function handlePasswordReset() {
+    const email = document.getElementById("loginEmail").value;
+    const errorElement = document.getElementById("loginErrorMessage");
+
+    if (!email) {
+        errorElement.innerText = "Masukkan email terlebih dahulu untuk reset password.";
+        errorElement.classList.remove("hidden");
+        return;
+    }
+
+    try {
+        await sendPasswordResetEmail(auth, email);
+        errorElement.classList.remove("hidden");
+        errorElement.classList.remove("text-red-500");
+        errorElement.classList.add("text-green-600");
+        errorElement.innerText = "Link reset password telah dikirim ke email Anda.";
+    } catch (error) {
+        errorElement.classList.remove("hidden");
+        errorElement.classList.remove("text-green-600");
+        errorElement.classList.add("text-red-500");
+        errorElement.innerText = "Email tidak ditemukan atau terjadi kesalahan.";
+    }
+}
+
+// Fungsi Eksekusi Keluar Sistem (Logout)
+
       function handleFirebaseLogout() {
           signOut(auth).then(() => {
               window.location.reload();
@@ -85,8 +115,16 @@
       });
 
       // Hubungkan fungsi ke elemen interaktif DOM (Scope type="module" terisolasi)
-      document.getElementById("btnSubmitLogin").addEventListener("click", handleFirebaseLogin);
-      document.getElementById("btnLogoutNav").addEventListener("click", handleFirebaseLogout);
+      document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("btnSubmitLogin")?.addEventListener("click", handleFirebaseLogin);
+
+    document.getElementById("btnForgotPassword")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        handlePasswordReset();
+    });
+
+    document.getElementById("btnLogoutNav")?.addEventListener("click", handleFirebaseLogout);
+});
     </script>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans antialiased w-full overflow-x-hidden">
@@ -110,7 +148,16 @@
                 </div>
                 <!-- Tempat Pesan Eror -->
                 <p id="loginErrorMessage" class="text-red-500 text-[11px] hidden mt-1 font-medium"></p>
-                
+
+<div class="flex justify-end">
+    <a href="#"
+       id="btnForgotPassword"
+       class="text-[11px] text-blue-700 hover:text-blue-900 hover:underline">
+       Forgot Password?
+    </a>
+</div>
+
+
                 <button id="btnSubmitLogin" class="w-full bg-blue-900 text-white py-2.5 rounded-lg text-xs font-semibold hover:bg-blue-800 transition shadow-sm mt-2 flex justify-center items-center gap-1">
                     <i data-lucide="log-in" class="w-3.5 h-3.5"></i> Autentikasi Masuk
                 </button>
