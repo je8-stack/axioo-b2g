@@ -4,237 +4,368 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Katalog Laptop B2G - PT Tera Data Indonusa Tbk</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Smooth scrolling */
         html { scroll-behavior: smooth; }
     </style>
+
+    <!-- LANGKAH 2: PERBARUI SCRIPT FIREBASE TYPE="MODULE" (MODULAR V12) -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js";
+      // Impor fungsi autentikasi modular v12 yang dibutuhkan
+      import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+      // Firebase Configuration Proyek Axioo B2G Anda
+      const firebaseConfig = {
+        apiKey: "AIzaSyCAy5igER74zBCaAHuwQRFNe8xfbiNCQDw",
+        authDomain: "axioo-b2g.firebaseapp.com",
+        projectId: "axioo-b2g",
+        storageBucket: "axioo-b2g.firebasestorage.app",
+        messagingSenderId: "184435113641",
+        appId: "1:184435113641:web:5b96fef036385f6a1cf3b8",
+        measurementId: "G-0F2W1WM69L"
+      };
+
+      // Inisialisasi Firebase Core & Analytics
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      
+      // Inisialisasi Firebase Auth Layanan Cloud
+      const auth = getAuth(app);
+
+      // Fungsi Eksekusi Validasi Login ke Cloud
+      async function handleFirebaseLogin() {
+          const email = document.getElementById("loginEmail").value;
+          const password = document.getElementById("loginPassword").value;
+          const errorElement = document.getElementById("loginErrorMessage");
+
+          if(!email || !password) {
+              errorElement.innerText = "Mohon isi email dan password secara lengkap.";
+              errorElement.classList.remove("hidden");
+              return;
+          }
+
+          try {
+              errorElement.classList.add("hidden");
+              // Jalankan verifikasi ke server cloud Firebase
+              await signInWithEmailAndPassword(auth, email, password);
+          } catch (error) {
+              // Tangkap response kegagalan kredensial
+              errorElement.innerText = "Akses ditolak: Email/Password salah atau akun belum dikonfirmasi.";
+              errorElement.classList.remove("hidden");
+          }
+      }
+
+      // Fungsi Eksekusi Keluar Sistem (Logout)
+      function handleFirebaseLogout() {
+          signOut(auth).then(() => {
+              window.location.reload();
+          });
+      }
+
+      // Listener Real-time untuk Mengunci/Membuka Halaman Katalog Berdasarkan Sesi Akun
+      onAuthStateChanged(auth, (user) => {
+          const loginOverlay = document.getElementById("loginOverlay");
+          const mainContent = document.getElementById("mainContent");
+
+          if (user) {
+              // Jika user valid (ada di daftar Firebase Auth), buka enkripsi halaman utama
+              loginOverlay.classList.add("hidden");
+              mainContent.classList.remove("hidden");
+          } else {
+              // Jika belum login atau sesi habis, kunci total halaman utama kembali
+              loginOverlay.classList.remove("hidden");
+              mainContent.classList.add("hidden");
+          }
+      });
+
+      // Hubungkan fungsi ke elemen interaktif DOM (Scope type="module" terisolasi)
+      document.getElementById("btnSubmitLogin").addEventListener("click", handleFirebaseLogin);
+      document.getElementById("btnLogoutNav").addEventListener("click", handleFirebaseLogout);
+    </script>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+<body class="bg-gray-50 text-gray-900 font-sans antialiased w-full overflow-x-hidden">
 
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row md:justify-between md:items-center py-3 md:py-0 md:h-16 gap-3 md:gap-0">
-                
-                <div class="flex items-center space-x-2 justify-between md:justify-start w-full md:w-auto">
-                    <div class="flex items-center space-x-2">
-                        <img src="1920px-Logo_Axioo_Baru.png" alt="Logo Axioo" class="h-5 sm:h-6 w-auto object-contain">
-                        <span class="text-[10px] sm:text-xs text-gray-400 font-mono">| Portal Product Manager</span>
-                    </div>
-                </div>
-                
-                <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm font-medium text-gray-600 w-full md:w-auto justify-start md:justify-end border-t border-gray-100 pt-2 md:pt-0 md:border-none">
-                    
-                    <div class="relative inline-block text-left group">
-                        <button class="inline-flex items-center gap-1 hover:text-blue-900 transition focus:outline-none py-1.5 font-semibold text-blue-900">
-                            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Market Analysis
-                            <i data-lucide="chevron-down" class="w-3 h-3 transition-transform group-hover:rotate-180"></i>
-                        </button>
-                        <div class="absolute left-0 mt-0 w-48 origin-top-left rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100 overflow-hidden">
-                            <div class="py-1">
-                                <a href="#project-status" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-900 transition">
-                                    <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-gray-400"></i> Project Lead/Status
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="relative inline-block text-left group">
-                        <button class="inline-flex items-center gap-1 hover:text-blue-900 transition focus:outline-none py-1.5 font-semibold text-blue-900">
-                            <i data-lucide="layers" class="w-3.5 h-3.5"></i> Product Management
-                            <i data-lucide="chevron-down" class="w-3 h-3 transition-transform group-hover:rotate-180"></i>
-                        </button>
-                        <div class="absolute left-0 mt-0 w-52 origin-top-left rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100 overflow-hidden">
-                            <div class="py-1">
-                                <a href="#sparepart-availability" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-900 transition">
-                                    <i data-lucide="wrench" class="w-3.5 h-3.5 text-gray-400"></i> Sparepart Availability
-                                </a>
-                                <a href="#product-lifecycle" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-900 transition">
-                                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-gray-400"></i> Product Life Cycle
-                                </a>
-                                <a href="#warehouse-control" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-900 transition">
-                                    <i data-lucide="package" class="w-3.5 h-3.5 text-gray-400"></i> Warehouse Control (TDI)
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <a href="#download-center" class="hover:text-blue-900 transition flex items-center gap-1 py-1.5 font-medium">
-                        <i data-lucide="folder-open" class="w-3.5 h-3.5 text-gray-400"></i> Documents Center
-                    </a>
-                    
-                    <a href="PRICELIST MEI 2026.xlsx" download class="bg-blue-900 text-white px-3 py-1.5 rounded md:rounded-md hover:bg-blue-800 transition text-xs flex items-center gap-1.5 shadow-sm ml-auto md:ml-0">
-                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Pricelist
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <header class="bg-white border-b border-gray-100 py-8 sm:py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-3xl">
-                <h1 class="text-2xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-                    Axioo B2G Product Command Center
-                </h1>
-                <p class="mt-2 text-sm sm:text-base text-gray-500">
-                    Centralized Product Intelligence for B2G Laptop Segments.
-                </p>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8" id="katalog">
-        
-        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6 sm:mb-8 flex flex-col md:flex-row gap-3 items-center justify-between">
-            <div class="relative w-full md:w-1/3">
-                <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Cari SKU, Tipe Processor, atau No. Sertifikat..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-blue-900">
-                <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-3"></i>
-            </div>
+    <!-- LANGKAH 1: MODIFIKASI STRUKTUR HTML (FORM LOGIN DENGAN LOGO AXIOO BARU) -->
+    <div id="loginOverlay" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-[100] px-4">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl max-w-sm w-full border border-gray-100 text-center">
+            <!-- REVISI: Mengganti placeholder teks lama dengan file gambar logo komersial baru -->
+            <img src="1920px-Logo_Axioo_Baru.png" alt="Logo Axioo" class="h-8 mx-auto mb-6 object-contain">
+            <h2 class="text-base font-bold text-gray-800 tracking-tight">Portal B2G Distributor</h2>
+            <p class="text-xs text-gray-400 mt-1 mb-6">Silakan masuk menggunakan akun resmi Anda</p>
             
-            <div class="flex flex-row gap-2 w-full md:w-auto justify-end">
-                <select id="seriesFilter" onchange="filterProducts()" class="w-1/2 md:w-auto border border-gray-300 rounded-lg text-xs sm:text-sm px-2.5 py-2 bg-white text-gray-700 focus:outline-none">
-                    <option value="All">All Laptop</option>
-                    <option value="Pro">MyBook Pro</option>
-                    <option value="Prime">MyBook Prime</option>
-                </select>
-                <select id="statusFilter" onchange="filterProducts()" class="w-1/2 md:w-auto border border-gray-300 rounded-lg text-xs sm:text-sm px-2.5 py-2 bg-white text-gray-700 focus:outline-none">
-                    <option value="All">Status LKPP</option>
-                    <option value="Tayang">Tayang</option>
-                    <option value="No">Not Active</option>
-                </select>
+            <div class="space-y-3 text-left">
+                <div>
+                    <label class="text-[11px] font-bold text-gray-500 block mb-1">Email Resmi</label>
+                    <input type="email" id="loginEmail" placeholder="nama@email.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-900">
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-gray-500 block mb-1">Password Akses</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-900">
+                </div>
+                <!-- Tempat Pesan Eror -->
+                <p id="loginErrorMessage" class="text-red-500 text-[11px] hidden mt-1 font-medium"></p>
+                
+                <button id="btnSubmitLogin" class="w-full bg-blue-900 text-white py-2.5 rounded-lg text-xs font-semibold hover:bg-blue-800 transition shadow-sm mt-2 flex justify-center items-center gap-1">
+                    <i data-lucide="log-in" class="w-3.5 h-3.5"></i> Autentikasi Masuk
+                </button>
             </div>
         </div>
+    </div>
 
-        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            </div>
+    <!-- PORTAL UTAMA KATALOG (Otomatis Tersembunyi 'hidden' Sebelum Akun Terverifikasi Sesi) -->
+    <div id="mainContent" class="hidden">
 
-        <section class="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <div id="project-status" class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm scroll-mt-24 border-t-4 border-t-blue-800 flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center gap-2 mb-3 text-blue-950">
-                        <i data-lucide="clipboard-list" class="w-4 h-4 sm:w-5 winter h-5"></i>
-                        <h3 class="font-bold text-sm">Project Lead/Status</h3>
+        <!-- NAVIGATION BAR (Optimasi Fluid & Stretch-Fit untuk Handphone & Tablet) -->
+        <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 w-full">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center py-3.5 md:py-0 md:h-16 gap-3 md:gap-0 w-full">
+                    
+                    <!-- Logo Identity -->
+                    <div class="flex items-center space-x-2 justify-between md:justify-start w-full md:w-auto">
+                        <div class="flex items-center space-x-2">
+                            <img src="1920px-Logo_Axioo_Baru.png" alt="Logo Axioo" class="h-5 sm:h-6 w-auto object-contain">
+                            <span class="text-[10px] sm:text-xs text-gray-400 font-mono">| Portal Product Manager</span>
+                        </div>
                     </div>
-                    <p class="text-xs text-gray-500 leading-relaxed">Pemetaan pipeline proyek B2G, tracking kebutuhan spesifikasi kustomisasi instansi, kualifikasi mitra lelang, serta monitoring dokumen administrasi pra-tender.</p>
-                </div>
-                <button class="mt-4 text-xs font-semibold text-blue-950 hover:underline inline-flex items-center gap-1 self-start">Buka Pipeline Proyek <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
-            </div>
+                    
+                    <!-- Nav Links -->
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-xs sm:text-sm font-medium text-gray-600 w-full md:w-auto justify-start md:justify-end border-t border-gray-100 pt-2.5 md:pt-0 md:border-none">
+                        
+                        <!-- DROP DOWN: MARKET ANALYSIS -->
+                        <div class="relative inline-block text-left group">
+                            <button class="inline-flex items-center gap-1 hover:text-blue-900 transition focus:outline-none py-1 font-semibold text-blue-900">
+                                <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Market Analysis
+                                <i data-lucide="chevron-down" class="w-3 h-3 transition-transform group-hover:rotate-180"></i>
+                            </button>
+                            <div class="absolute left-0 mt-1 w-48 origin-top-left rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100 overflow-hidden">
+                                <div class="py-1">
+                                    <a href="#project-status" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-900 transition">
+                                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-gray-400"></i> Project Lead/Status
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- DROP DOWN: PRODUCT MANAGEMENT -->
+                        <div class="relative inline-block text-left group">
+                            <button class="inline-flex items-center gap-1 hover:text-blue-900 transition focus:outline-none py-1 font-semibold text-blue-900">
+                                <i data-lucide="layers" class="w-3.5 h-3.5"></i> Product Management
+                                <i data-lucide="chevron-down" class="w-3 h-3 transition-transform group-hover:rotate-180"></i>
+                            </button>
+                            <div class="absolute left-0 mt-1 w-52 origin-top-left rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100 overflow-hidden">
+                                <div class="py-1">
+                                    <a href="#sparepart-availability" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-900 transition">
+                                        <i data-lucide="wrench" class="w-3.5 h-3.5 text-gray-400"></i> Sparepart Availability
+                                    </a>
+                                    <a href="#product-lifecycle" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-900 transition">
+                                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-gray-400"></i> Product Life Cycle
+                                    </a>
+                                    <a href="#warehouse-control" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-900 transition">
+                                        <i data-lucide="package" class="w-3.5 h-3.5 text-gray-400"></i> Warehouse Control (TDI)
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
 
-            <div id="sparepart-availability" class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm scroll-mt-24 flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center gap-2 mb-3 text-blue-900">
-                        <i data-lucide="wrench" class="w-4 h-4 sm:w-5 h-5"></i>
-                        <h3 class="font-bold text-sm">Sparepart Availability</h3>
+                        <!-- DOCUMENTS CENTER -->
+                        <a href="#download-center" class="hover:text-blue-900 transition flex items-center gap-1 py-1 font-medium">
+                            <i data-lucide="folder-open" class="w-3.5 h-3.5 text-gray-400"></i> Documents Center
+                        </a>
+                        
+                        <!-- LOGOUT ACTION BUTTON -->
+                        <button id="btnLogoutNav" class="text-xs text-red-600 hover:text-red-800 transition font-semibold flex items-center gap-1 py-1">
+                            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Keluar
+                        </button>
                     </div>
-                    <p class="text-xs text-gray-500 leading-relaxed">Pantau ketersediaan komponen utama laptop (LCD panel, Battery, Mainboard, Keyboard) untuk pemenuhan SLA layanan purna jual instansi pemerintah.</p>
                 </div>
-                <button class="mt-4 text-xs font-semibold text-blue-950 hover:underline inline-flex items-center gap-1 self-start">Kelola Inventory <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
             </div>
+        </nav>
 
-            <div id="product-lifecycle" class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm scroll-mt-24 flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center gap-2 mb-3 text-blue-900">
-                        <i data-lucide="refresh-cw" class="w-4 h-4 sm:w-5 h-5"></i>
-                        <h3 class="font-bold text-sm">Product Life Cycle (PLC)</h3>
-                    </div>
-                    <p class="text-xs text-gray-500 leading-relaxed">Manajemen siklus SKU dari tahap NPI (New Product Introduction), EOL (End of Life) planing, hingga transisi regulasi sertifikat e-Katalog baru.</p>
+        <!-- HERO SECTION -->
+        <header class="bg-white border-b border-gray-100 py-8 sm:py-12 w-full">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="max-w-3xl">
+                    <h1 class="text-2xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                        Axioo B2G Product Command Center
+                    </h1>
+                    <p class="mt-2 text-sm sm:text-base text-gray-500">
+                        Centralized Product Intelligence for B2G Laptop Segments.
+                    </p>
                 </div>
-                <button class="mt-4 text-xs font-semibold text-blue-950 hover:underline inline-flex items-center gap-1 self-start">Lihat PLC Timeline <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
             </div>
+        </header>
 
-            <div id="warehouse-control" class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm scroll-mt-24 flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center gap-2 mb-3 text-blue-900">
-                        <i data-lucide="package" class="w-4 h-4 sm:w-5 h-5"></i>
-                        <h3 class="font-bold text-sm">Warehouse Control (TDI)</h3>
-                    </div>
-                    <p class="text-xs text-gray-500 leading-relaxed">Integrasi logistik gudang PT Tera Data Indonusa Tbk. Validasi alokasi unit proyek pengadaan pusat sebelum dirakit (Ready Rikit / Buffer Stock).</p>
+        <!-- MAIN HUB -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full">
+            
+            <!-- SEARCH & FILTER BAR -->
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6 sm:mb-8 flex flex-col sm:flex-row gap-3 items-center justify-between w-full">
+                <div class="relative w-full sm:w-1/2 md:w-1/3">
+                    <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Cari SKU, Tipe Processor, atau No. Sertifikat..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-blue-900">
+                    <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-3"></i>
                 </div>
-                <button class="mt-4 text-xs font-semibold text-blue-950 hover:underline inline-flex items-center gap-1 self-start">Periksa Stok Gudang <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
-            </div>
-        </section>
-
-        <section id="download-center" class="mt-12 sm:mt-16 bg-white border border-gray-200 rounded-xl p-5 sm:p-8 shadow-sm scroll-mt-24">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-4 mb-6 gap-2">
-                <div>
-                    <h2 class="text-lg sm:text-xl font-bold text-gray-900">Pusat File & Dokumen Kerja Distributor</h2>
-                    <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Unduh berkas induk resmi instansi untuk lampiran pengadaan barang/jasa.</p>
-                </div>
-                <span class="text-[11px] text-gray-400 font-mono">Arsip Siklus: Mei 2026</span>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 
-                <div class="border border-gray-200 bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:border-blue-300 transition border-l-4 border-l-orange-500">
-                    <div class="flex items-center space-x-3 overflow-hidden">
-                        <div class="bg-orange-100 text-orange-700 p-2 rounded-lg shrink-0">
-                            <i data-lucide="book-open" class="w-5 h-5"></i>
-                        </div>
-                        <div class="truncate">
-                            <p class="text-xs font-bold text-gray-900 truncate">Product Catalogue</p>
-                            <p class="text-[10px] text-gray-400 truncate">CATALOGUEPROJECT2026.pdf</p>
-                        </div>
-                    </div>
-                    <a href="CATALOGUEPROJECT2026.pdf" download class="bg-white p-1.5 border border-gray-300 rounded-md shadow-sm text-blue-900 hover:bg-blue-50 transition shrink-0">
-                        <i data-lucide="download" class="w-4 h-4"></i>
-                    </a>
-                </div>
-
-                <div class="border border-gray-200 bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:border-blue-300 transition">
-                    <div class="flex items-center space-x-3 overflow-hidden">
-                        <div class="bg-green-100 text-green-700 p-2 rounded-lg shrink-0">
-                            <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
-                        </div>
-                        <div class="truncate">
-                            <p class="text-xs font-bold text-gray-900 truncate">PRICELIST MEI 2026</p>
-                            <p class="text-[10px] text-gray-400 truncate">Pricelist Tiering & HET</p>
-                        </div>
-                    </div>
-                    <a href="PRICELIST MEI 2026.xlsx" download class="bg-white p-1.5 border border-gray-300 rounded-md shadow-sm text-blue-900 hover:bg-blue-50 transition shrink-0">
-                        <i data-lucide="download" class="w-4 h-4"></i>
-                    </a>
-                </div>
-
-                <div class="border border-gray-200 bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:border-blue-300 transition border-l-4 border-l-blue-900">
-                    <div class="flex items-center space-x-3 overflow-hidden">
-                        <div class="bg-blue-100 text-blue-700 p-2 rounded-lg shrink-0">
-                            <i data-lucide="database" class="w-5 h-5"></i>
-                        </div>
-                        <div class="truncate">
-                            <p class="text-xs font-bold text-gray-900 truncate">Master Data Tayang</p>
-                            <p class="text-[10px] text-gray-400 truncate">Rekap Legalitas & Link LKPP</p>
-                        </div>
-                    </div>
-                    <a href="Master Data Tayang Mei 2026.xlsx" download class="bg-white p-1.5 border border-gray-300 rounded-md shadow-sm text-blue-900 hover:bg-blue-50 transition shrink-0">
-                        <i data-lucide="download" class="w-4 h-4"></i>
-                    </a>
-                </div>
-
-                <div class="border border-gray-200 bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:border-blue-300 transition">
-                    <div class="flex items-center space-x-3 overflow-hidden">
-                        <div class="bg-red-100 text-red-700 p-2.5 rounded-lg shrink-0">
-                            <i data-lucide="shield-check" class="w-5 h-5"></i>
-                        </div>
-                        <div class="truncate">
-                            <p class="text-xs font-bold text-gray-900 truncate">Bundling Berkas TKDN</p>
-                            <p class="text-[10px] text-gray-400 truncate">Salinan Digital Sertifikat (.zip)</p>
-                        </div>
-                    </div>
-                    <a href="#" class="bg-white p-1.5 border border-gray-300 rounded-md shadow-sm text-blue-900 hover:bg-blue-50 transition shrink-0">
-                        <i data-lucide="download" class="w-4 h-4"></i>
-                    </a>
+                <div class="flex flex-row gap-2 w-full sm:w-auto justify-end">
+                    <select id="seriesFilter" onchange="filterProducts()" class="w-1/2 sm:w-36 border border-gray-300 rounded-lg text-xs sm:text-sm px-2.5 py-2 bg-white text-gray-700 focus:outline-none">
+                        <option value="All">All Laptop</option>
+                        <option value="Pro">MyBook Pro</option>
+                        <option value="Prime">MyBook Prime</option>
+                    </select>
+                    <select id="statusFilter" onchange="filterProducts()" class="w-1/2 sm:w-36 border border-gray-300 rounded-lg text-xs sm:text-sm px-2.5 py-2 bg-white text-gray-700 focus:outline-none">
+                        <option value="All">Status LKPP</option>
+                        <option value="Tayang">Tayang</option>
+                        <option value="No">Not Active</option>
+                    </select>
                 </div>
             </div>
-        </section>
-    </main>
 
-    <footer class="bg-white border-t border-gray-200 mt-16 py-6 text-center text-xs text-gray-400 px-4">
-        <p class="font-semibold text-gray-500">&copy; Alward Jevon 2026</p>
-        <p class="mt-1">Axioo B2G Product Command Center</p>
-    </footer>
+            <!-- PRODUCT GRID (Responsive Fill-In: 1 Kolom Mobile, 2 Kolom Tablet, 3 Kolom Desktop) -->
+            <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
+            </div>
 
+            <!-- OPERATIONAL MODULE CARDS (Responsive Fill-In: 1 Kolom Mobile, 2 Kolom Tablet, 4 Kolom Laptop) -->
+            <section class="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
+                <!-- Project Lead/Status -->
+                <div id="project-status" class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm scroll-mt-24 border-t-4 border-t-blue-800 flex flex-col justify-between w-full">
+                    <div>
+                        <div class="flex items-center gap-2 mb-3 text-blue-950">
+                            <i data-lucide="clipboard-list" class="w-4 h-4 sm:w-5 h-5"></i>
+                            <h3 class="font-bold text-sm">Project Lead/Status</h3>
+                        </div>
+                        <p class="text-xs text-gray-500 leading-relaxed">Pemetaan pipeline proyek B2G, tracking kebutuhan spesifikasi kustomisasi instansi, kualifikasi mitra lelang, serta monitoring dokumen administrasi pra-tender.</p>
+                    </div>
+                    <button class="mt-4 text-xs font-semibold text-blue-950 hover:underline inline-flex items-center gap-1 self-start">Buka Pipeline Proyek <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
+                </div>
+
+                <!-- Sparepart Availability -->
+                <div id="sparepart-availability" class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm scroll-mt-24 flex flex-col justify-between w-full">
+                    <div>
+                        <div class="flex items-center gap-2 mb-3 text-blue-900">
+                            <i data-lucide="wrench" class="w-4 h-4 sm:w-5 h-5"></i>
+                            <h3 class="font-bold text-sm">Sparepart Availability</h3>
+                        </div>
+                        <p class="text-xs text-gray-500 leading-relaxed">Pantau ketersediaan komponen utama laptop (LCD panel, Battery, Mainboard, Keyboard) untuk pemenuhan SLA layanan purna jual instansi pemerintah.</p>
+                    </div>
+                    <button class="mt-4 text-xs font-semibold text-blue-950 hover:underline inline-flex items-center gap-1 self-start">Kelola Inventory <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
+                </div>
+
+                <!-- Product Life Cycle -->
+                <div id="product-lifecycle" class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm scroll-mt-24 flex flex-col justify-between w-full">
+                    <div>
+                        <div class="flex items-center gap-2 mb-3 text-blue-900">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 sm:w-5 h-5"></i>
+                            <h3 class="font-bold text-sm">Product Life Cycle (PLC)</h3>
+                        </div>
+                        <p class="text-xs text-gray-500 leading-relaxed">Manajemen siklus SKU dari tahap NPI (New Product Introduction), EOL (End of Life) planing, hingga transisi regulasi sertifikat e-Katalog baru.</p>
+                    </div>
+                    <button class="mt-4 text-xs font-semibold text-blue-950 hover:underline inline-flex items-center gap-1 self-start">Lihat PLC Timeline <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
+                </div>
+
+                <!-- Warehouse Control -->
+                <div id="warehouse-control" class="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm scroll-mt-24 flex flex-col justify-between w-full">
+                    <div>
+                        <div class="flex items-center gap-2 mb-3 text-blue-900">
+                            <i data-lucide="package" class="w-4 h-4 sm:w-5 h-5"></i>
+                            <h3 class="font-bold text-sm">Warehouse Control (TDI)</h3>
+                        </div>
+                        <p class="text-xs text-gray-500 leading-relaxed">Integrasi logistik gudang PT Tera Data Indonusa Tbk. Validasi alokasi unit proyek pengadaan pusat sebelum dirakit (Ready Rikit / Buffer Stock).</p>
+                    </div>
+                    <button class="mt-4 text-xs font-semibold text-blue-950 hover:underline inline-flex items-center gap-1 self-start">Periksa Stok Gudang <i data-lucide="arrow-right" class="w-3 h-3"></i></button>
+                </div>
+            </section>
+
+            <!-- DOWNLOAD CENTER -->
+            <section id="download-center" class="mt-12 sm:mt-16 bg-white border border-gray-200 rounded-xl p-5 sm:p-8 shadow-sm scroll-mt-24 w-full">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-4 mb-6 gap-2">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-gray-900">Pusat File & Dokumen Kerja Distributor</h2>
+                        <p class="text-xs sm:text-sm text-gray-500 mt-0.5">Unduh berkas induk resmi instansi untuk lampiran pengadaan barang/jasa.</p>
+                    </div>
+                    <span class="text-[11px] text-gray-400 font-mono">Arsip Siklus: Mei 2026</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                    
+                    <!-- PRODUCT CATALOGUE -->
+                    <div class="border border-gray-200 bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:border-blue-300 transition border-l-4 border-l-orange-500 w-full">
+                        <div class="flex items-center space-x-3 overflow-hidden">
+                            <div class="bg-orange-100 text-orange-700 p-2 rounded-lg shrink-0">
+                                <i data-lucide="book-open" class="w-5 h-5"></i>
+                            </div>
+                            <div class="truncate">
+                                <p class="text-xs font-bold text-gray-900 truncate">Product Catalogue</p>
+                                <p class="text-[10px] text-gray-400 truncate">CATALOGUEPROJECT2026.pdf</p>
+                            </div>
+                        </div>
+                        <a href="CATALOGUEPROJECT2026.pdf" download class="bg-white p-1.5 border border-gray-300 rounded-md shadow-sm text-blue-900 hover:bg-blue-50 transition shrink-0">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+
+                    <!-- PRICELIST EXCEL -->
+                    <div class="border border-gray-200 bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:border-blue-300 transition w-full">
+                        <div class="flex items-center space-x-3 overflow-hidden">
+                            <div class="bg-green-100 text-green-700 p-2 rounded-lg shrink-0">
+                                <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+                            </div>
+                            <div class="truncate">
+                                <p class="text-xs font-bold text-gray-900 truncate">PRICELIST MEI 2026</p>
+                                <p class="text-[10px] text-gray-400 truncate">Pricelist Tiering & HET</p>
+                            </div>
+                        </div>
+                        <a href="PRICELIST MEI 2026.xlsx" download class="bg-white p-1.5 border border-gray-300 rounded-md shadow-sm text-blue-900 hover:bg-blue-50 transition shrink-0">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+
+                    <!-- MASTER DATA TAYANG -->
+                    <div class="border border-gray-200 bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:border-blue-300 transition border-l-4 border-l-blue-900 w-full">
+                        <div class="flex items-center space-x-3 overflow-hidden">
+                            <div class="bg-blue-100 text-blue-700 p-2 rounded-lg shrink-0">
+                                <i data-lucide="database" class="w-5 h-5"></i>
+                            </div>
+                            <div class="truncate">
+                                <p class="text-xs font-bold text-gray-900 truncate">Master Data Tayang</p>
+                                <p class="text-[10px] text-gray-400 truncate">Rekap Legalitas & Link LKPP</p>
+                            </div>
+                        </div>
+                        <a href="Master Data Tayang Mei 2026.xlsx" download class="bg-white p-1.5 border border-gray-300 rounded-md shadow-sm text-blue-900 hover:bg-blue-50 transition shrink-0">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+
+                    <!-- ZIP SERTIFIKAT -->
+                    <div class="border border-gray-200 bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:border-blue-300 transition w-full">
+                        <div class="flex items-center space-x-3 overflow-hidden">
+                            <div class="bg-red-100 text-red-700 p-2.5 rounded-lg shrink-0">
+                                <i data-lucide="shield-check" class="w-5 h-5"></i>
+                            </div>
+                            <div class="truncate">
+                                <p class="text-xs font-bold text-gray-900 truncate">Bundling Berkas TKDN</p>
+                                <p class="text-[10px] text-gray-400 truncate">Salinan Digital Sertifikat (.zip)</p>
+                            </div>
+                        </div>
+                        <a href="#" class="bg-white p-1.5 border border-gray-300 rounded-md shadow-sm text-blue-900 hover:bg-blue-50 transition shrink-0">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bg-white border-t border-gray-200 mt-16 py-6 text-center text-xs text-gray-400 px-4 w-full">
+            <p class="font-semibold text-gray-500">&copy; Alward Jevon 2026</p>
+            <p class="mt-1">Axioo B2G Product Command Center</p>
+        </footer>
+    </div>
+
+    <!-- JAVASCRIPT RUNTIME ENGINE -->
     <script>
         const productsData = [
           { "name": "MyBook Pro E1 (8N2)", "type": "Notebook", "tkdn": "48.68%", "processor": "N4500", "ram": "8GB", "storage": "256 GB SSD", "screen": "14\"", "os": "Win 11", "status": "READY STOCK / READY RAKIT", "noSertif": "11624/SJ-IND.8/E-TKDN/10/2024", "statusTayang": "Tayang", "linkLKPP": "https://penyedia.inaproc.id/master-products/1cdd36af-1ee4-41d6-aacc-bea33e924d19", "etalase": "Master Produk" },
@@ -332,8 +463,8 @@
                        </button>`;
 
                 const cardHtml = `
-                    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col font-sans">
-                        <div class="p-6 flex-1">
+                    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col font-sans w-full">
+                        <div class="p-5 sm:p-6 flex-1">
                             <div class="flex justify-between items-start mb-4">
                                 <span class="bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-1 rounded">${subSeriesLabel}</span>
                                 <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs px-2.5 py-1 rounded-md font-bold tracking-wide">
@@ -341,30 +472,30 @@
                                 </div>
                             </div>
                             
-                            <div class="flex justify-between items-start mt-1">
-                                <h3 class="text-base font-bold text-gray-900 tracking-tight max-w-[70%]">${p.name}</h3>
+                            <div class="flex justify-between items-start mt-1 gap-2">
+                                <h3 class="text-sm sm:text-base font-bold text-gray-900 tracking-tight max-w-[70%] break-words">${p.name}</h3>
                                 ${lkppBadge}
                             </div>
                             ${statusBadge}
                             
                             <ul class="mt-5 space-y-2 text-xs text-gray-500 border-t border-b border-gray-100 py-3.5 font-normal">
-                                <li class="flex justify-between"><span>Processor:</span> <span class="text-gray-900 text-right font-medium">${p.processor}</span></li>
-                                <li class="flex justify-between"><span>RAM:</span> <span class="text-gray-900 text-right font-medium">${p.ram}</span></li>
-                                <li class="flex justify-between"><span>Storage:</span> <span class="text-gray-900 text-right font-medium">${p.storage}</span></li>
-                                <li class="flex justify-between"><span>Layar / OS:</span> <span class="text-gray-900 text-right font-medium">${p.screen} / ${p.os}</span></li>
+                                <li class="flex justify-between gap-4"><span>Processor:</span> <span class="text-gray-900 text-right font-medium truncate">${p.processor}</span></li>
+                                <li class="flex justify-between gap-4"><span>RAM:</span> <span class="text-gray-900 text-right font-medium shrink-0">${p.ram}</span></li>
+                                <li class="flex justify-between gap-4"><span>Storage:</span> <span class="text-gray-900 text-right font-medium truncate">${p.storage}</span></li>
+                                <li class="flex justify-between gap-4"><span>Layar / OS:</span> <span class="text-gray-900 text-right font-medium truncate">${p.screen} / ${p.os}</span></li>
                             </ul>
 
-                            <div class="mt-4 bg-gray-50 p-3 rounded-lg text-[11px] text-gray-500 space-y-1 border border-gray-100">
-                                <p class="truncate"><strong>No. Sertifikat:</strong> ${p.noSertif}</p>
-                                <p class="truncate"><strong>Etalase LKPP:</strong> ${p.etalase}</p>
+                            <div class="mt-4 bg-gray-50 p-3 rounded-lg text-[11px] text-gray-500 space-y-1 border border-gray-100 w-full overflow-hidden">
+                                <p class="truncate" title="${p.noSertif}"><strong>No. Sertifikat:</strong> ${p.noSertif}</p>
+                                <p class="truncate" title="${p.etalase}"><strong>Etalase LKPP:</strong> ${p.etalase}</p>
                             </div>
                         </div>
 
-                        <div class="bg-gray-50 px-4 py-3 border-t border-gray-100 flex gap-2">
-                            <a href="#" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500" title="Spec Sheet">
+                        <div class="bg-gray-50 px-4 py-3.5 border-t border-gray-100 flex gap-2 w-full mt-auto">
+                            <a href="#" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="Spec Sheet">
                                 <i data-lucide="file-text" class="w-4 h-4"></i>
                             </a>
-                            <a href="#" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500" title="Unduh Brosur">
+                            <a href="#" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="Unduh Brosur">
                                 <i data-lucide="image" class="w-4 h-4"></i>
                             </a>
                             ${lkppButton}
