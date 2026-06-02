@@ -112,38 +112,6 @@ function renderTenderCards(data) {
 
 }
 
-// --- TAMBAHKAN KODE INI ---
-
-// 1. Fungsi untuk menangani reset password
-async function handlePasswordReset() {
-    const email = document.getElementById("loginEmail").value;
-    
-    if (!email) {
-        alert("Silakan masukkan email Anda terlebih dahulu.");
-        return;
-    }
-
-    try {
-        await sendPasswordResetEmail(auth, email);
-        alert("Link reset password telah dikirim ke: " + email);
-    } catch (error) {
-        console.error("Error Firebase:", error.code, error.message);
-        alert("Gagal: " + error.message);
-    }
-}
-
-// 2. Hubungkan fungsi ke tombol setelah halaman selesai dimuat
-document.addEventListener("DOMContentLoaded", () => {
-    const btnForgot = document.getElementById("btnForgotPassword");
-    if (btnForgot) {
-        btnForgot.addEventListener("click", (e) => {
-            e.preventDefault(); // Mencegah link melakukan navigasi
-            handlePasswordReset();
-        });
-    }
-});
-// ---------------------------
-
 // Fungsi Eksekusi Validasi Login ke Cloud
       
 async function handleFirebaseLogin() {
