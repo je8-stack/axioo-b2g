@@ -136,14 +136,16 @@ async function handleFirebaseLogin() {
 
 async function handlePasswordReset() {
     const email = document.getElementById("loginEmail").value;
-    const errorElement = document.getElementById("loginErrorMessage");
 
-    if (!email) {
-        errorElement.innerText = "Masukkan email terlebih dahulu untuk reset password.";
-        errorElement.classList.remove("hidden");
-        return;
+    try {
+        await sendPasswordResetEmail(auth, email);
+
+        alert("Reset email sent");
+    } catch (error) {
+        console.error(error);
+        alert(error.code + " | " + error.message);
     }
-
+}
     try {
         await sendPasswordResetEmail(auth, email);
         errorElement.classList.remove("hidden");
