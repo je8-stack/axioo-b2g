@@ -139,25 +139,39 @@ async function handlePasswordReset() {
     const errorElement = document.getElementById("loginErrorMessage");
 
     if (!email) {
-        errorElement.innerText = "Masukkan email terlebih dahulu untuk reset password.";
         errorElement.classList.remove("hidden");
+        errorElement.classList.remove("text-green-600");
+        errorElement.classList.add("text-red-500");
+        errorElement.innerText = "Masukkan email terlebih dahulu untuk reset password.";
         return;
     }
 
     try {
         await sendPasswordResetEmail(auth, email);
+
+        console.log("Reset password email sent");
+
         errorElement.classList.remove("hidden");
         errorElement.classList.remove("text-red-500");
         errorElement.classList.add("text-green-600");
         errorElement.innerText = "Link reset password telah dikirim ke email Anda.";
+
+        alert("Reset email sent");
+
     } catch (error) {
+
+        console.error("Firebase Reset Password Error:", error);
+
         errorElement.classList.remove("hidden");
         errorElement.classList.remove("text-green-600");
         errorElement.classList.add("text-red-500");
-        errorElement.innerText = "Email tidak ditemukan atau terjadi kesalahan.";
+
+        errorElement.innerText =
+            `${error.code} | ${error.message}`;
+
+        alert(`${error.code} | ${error.message}`);
     }
 }
-
 // Fungsi Eksekusi Keluar Sistem (Logout)
 
       function handleFirebaseLogout() {
