@@ -197,6 +197,30 @@ async function handlePasswordReset() {
 
     document.getElementById("btnLogoutNav")?.addEventListener("click", handleFirebaseLogout);
 });
+
+// TAMBAHKAN KODE INI UNTUK MENGHUBUNGKAN TOMBOL
+document.addEventListener("DOMContentLoaded", () => {
+    // Tombol Login
+    const btnLogin = document.getElementById("btnSubmitLogin");
+    if (btnLogin) {
+        btnLogin.addEventListener("click", handleFirebaseLogin);
+    }
+
+    // Tombol Lupa Password
+    const btnForgot = document.getElementById("btnForgotPassword");
+    if (btnForgot) {
+        btnForgot.addEventListener("click", (e) => {
+            e.preventDefault(); // Mencegah halaman reload
+            handlePasswordReset();
+        });
+    }
+
+    // Tombol Logout
+    const btnLogout = document.getElementById("btnLogoutNav");
+    if (btnLogout) {
+        btnLogout.addEventListener("click", handleFirebaseLogout);
+    }
+});
     </script>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans antialiased w-full overflow-x-hidden">
