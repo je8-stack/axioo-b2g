@@ -212,30 +212,23 @@ async function handlePasswordReset() {
     document.getElementById("btnLogoutNav")?.addEventListener("click", handleFirebaseLogout);
 });
 
-// TAMBAHKAN KODE INI UNTUK MENGHUBUNGKAN TOMBOL
+// Event binding tambahan (revisi)
 document.addEventListener("DOMContentLoaded", () => {
-    // Tombol Login
     const btnLogin = document.getElementById("btnSubmitLogin");
-    if (btnLogin) {
-        btnLogin.addEventListener("click", handleFirebaseLogin);
-    }
+    if (btnLogin) btnLogin.addEventListener("click", handleFirebaseLogin);
 
-    // Tombol Lupa Password
     const btnForgot = document.getElementById("btnForgotPassword");
     if (btnForgot) {
         btnForgot.addEventListener("click", (e) => {
-            e.preventDefault(); // Mencegah halaman reload
+            e.preventDefault();
             handlePasswordReset();
         });
     }
 
-    // Tombol Logout
     const btnLogout = document.getElementById("btnLogoutNav");
-    if (btnLogout) {
-        btnLogout.addEventListener("click", handleFirebaseLogout);
-    }
+    if (btnLogout) btnLogout.addEventListener("click", handleFirebaseLogout);
 });
-    </script>
+</script>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans antialiased w-full overflow-x-hidden">
 
@@ -745,4 +738,26 @@ function closePreview(){
 }
 </script>
 </body>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    </head>
+<body>
+    <script type="module">
+        // Pastikan Anda sudah mengimpor Firebase SDK di atas sini
+        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+        
+        const auth = getAuth();
+
+        // MASUKKAN KODE ANDA DI SINI
+        async function handleFirebaseLogin() {
+            // ... isi fungsi login Anda
+        }
+
+        async function handlePasswordReset() {
+            // ... isi fungsi reset password Anda
+        }
+    </script>
+</body>
+</html>
 </html>
