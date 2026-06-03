@@ -21,6 +21,7 @@
       import {
   getAuth,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signOut,
   sendPasswordResetEmail,
@@ -172,6 +173,58 @@ async function handlePasswordReset() {
         alert(`${error.code} | ${error.message}`);
     }
 }
+// Fungsi Eksekusi Register User Baru
+
+async function handleFirebaseRegister() {
+    const email = document.getElementById("regEmail").value;
+    const password = document.getElementById("regPassword").value;
+    const confirmPassword = document.getElementById("regConfirmPassword").value;
+    const errorElement = document.getElementById("registerErrorMessage");
+    const successElement = document.getElementById("registerSuccessMessage");
+
+    errorElement.classList.add("hidden");
+    successElement.classList.add("hidden");
+
+    if (!email || !password || !confirmPassword) {
+        errorElement.innerText = "Mohon isi semua field registrasi.";
+        errorElement.classList.remove("hidden");
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        errorElement.innerText = "Password dan konfirmasi password tidak cocok.";
+        errorElement.classList.remove("hidden");
+        return;
+    }
+
+    if (password.length < 6) {
+        errorElement.innerText = "Password minimal 6 karakter.";
+        errorElement.classList.remove("hidden");
+        return;
+    }
+
+    try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        successElement.innerText = "Registrasi berhasil! Silakan login menggunakan akun baru Anda.";
+        successElement.classList.remove("hidden");
+        document.getElementById("regEmail").value = "";
+        document.getElementById("regPassword").value = "";
+        document.getElementById("regConfirmPassword").value = "";
+        setTimeout(() => {
+            document.getElementById("registerModal").classList.add("hidden");
+            document.getElementById("registerModal").classList.remove("flex");
+        }, 2000);
+    } catch (error) {
+        const msg = error.code === "auth/email-already-in-use"
+            ? "Email sudah terdaftar. Gunakan email lain."
+            : error.code === "auth/weak-password"
+            ? "Password terlalu lemah. Minimal 6 karakter."
+            : `${error.code} | ${error.message}`;
+        errorElement.innerText = msg;
+        errorElement.classList.remove("hidden");
+    }
+}
+
 // Fungsi Eksekusi Keluar Sistem (Logout)
 
       function handleFirebaseLogout() {
@@ -227,6 +280,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const btnLogout = document.getElementById("btnLogoutNav");
     if (btnLogout) btnLogout.addEventListener("click", handleFirebaseLogout);
+
+    const btnShowRegister = document.getElementById("btnShowRegister");
+    if (btnShowRegister) {
+        btnShowRegister.addEventListener("click", (e) => {
+            e.preventDefault();
+            document.getElementById("loginOverlay").classList.add("hidden");
+            document.getElementById("registerModal").classList.remove("hidden");
+            document.getElementById("registerModal").classList.add("flex");
+        });
+    }
+
+    const btnBackToLogin = document.getElementById("btnBackToLogin");
+    if (btnBackToLogin) {
+        btnBackToLogin.addEventListener("click", (e) => {
+            e.preventDefault();
+            document.getElementById("registerModal").classList.add("hidden");
+            document.getElementById("registerModal").classList.remove("flex");
+            document.getElementById("loginOverlay").classList.remove("hidden");
+        });
+    }
+
+    const btnRegister = document.getElementById("btnSubmitRegister");
+    if (btnRegister) btnRegister.addEventListener("click", handleFirebaseRegister);
 });
 </script>
 </head>
@@ -262,6 +338,46 @@ Forgot Password?</a>
                 <button id="btnSubmitLogin" class="w-full bg-blue-900 text-white py-2.5 rounded-lg text-xs font-semibold hover:bg-orange-800 transition shadow-sm mt-2 flex justify-center items-center gap-1">
                     <i data-lucide="log-in" class="w-3.5 h-3.5"></i> Login
                 </button>
+
+                <p class="text-center text-[11px] text-gray-400 mt-3">
+                    Belum punya akun?
+                    <a href="#" id="btnShowRegister" class="text-blue-700 hover:text-blue-900 hover:underline font-semibold">Register New User</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- REGISTER NEW USER MODAL -->
+    <div id="registerModal" class="fixed inset-0 bg-gray-900 hidden items-center justify-center z-[200] px-4">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl max-w-sm w-full border border-gray-100 text-center">
+            <img src="1920px-Logo_Axioo_Baru.png" alt="Logo Axioo" class="h-8 mx-auto mb-6 object-contain">
+            <h2 class="text-base font-bold text-gray-800 tracking-tight">Register New User</h2>
+            <p class="text-xs text-gray-400 mt-1 mb-6">Buat akun baru untuk akses Portal PM Commercial</p>
+
+            <div class="space-y-3 text-left">
+                <div>
+                    <label class="text-[11px] font-bold text-gray-500 block mb-1">Email Baru</label>
+                    <input type="email" id="regEmail" placeholder="nama@terra.co.id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-orange-900">
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-gray-500 block mb-1">Password</label>
+                    <input type="password" id="regPassword" placeholder="Min. 6 karakter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-900">
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-gray-500 block mb-1">Konfirmasi Password</label>
+                    <input type="password" id="regConfirmPassword" placeholder="Ulangi password" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-900">
+                </div>
+                <p id="registerErrorMessage" class="text-red-500 text-[11px] hidden mt-1 font-medium"></p>
+                <p id="registerSuccessMessage" class="text-green-600 text-[11px] hidden mt-1 font-medium"></p>
+
+                <button id="btnSubmitRegister" class="w-full bg-orange-800 text-white py-2.5 rounded-lg text-xs font-semibold hover:bg-blue-900 transition shadow-sm mt-2 flex justify-center items-center gap-1">
+                    <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Daftar
+                </button>
+
+                <p class="text-center text-[11px] text-gray-400 mt-3">
+                    Sudah punya akun?
+                    <a href="#" id="btnBackToLogin" class="text-blue-700 hover:text-blue-900 hover:underline font-semibold">Login</a>
+                </p>
             </div>
         </div>
     </div>
