@@ -309,7 +309,8 @@ document.addEventListener("DOMContentLoaded", () => {
 <body class="bg-gray-50 text-gray-900 font-sans antialiased w-full overflow-x-hidden">
 
     <!-- LANGKAH 1: MODIFIKASI STRUKTUR HTML (FORM LOGIN DENGAN LOGO AXIOO BARU) -->
-    <div id="loginOverlay" class="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-[100] px-4">
+    <div id="loginOverlay" class="fixed inset-0 bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center z-[100] px-4" style="background: linear-gradient(rgba(0,0,0,0.65),rgba(0,0,0,0.65)),url('Landing Page Background.png') center/cover no-repeat">
+        <p id="loginDateTime" class="text-[10px] text-gray-400 font-mono mb-2"></p>
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl max-w-sm w-full border border-gray-100 text-center">
             <!-- REVISI: Mengganti placeholder teks lama dengan file gambar logo komersial baru -->
             <img src="1920px-Logo_Axioo_Baru.png" alt="Logo Axioo" class="h-8 mx-auto mb-6 object-contain">
@@ -350,7 +351,8 @@ Forgot Password?</a>
     </div>
 
     <!-- REGISTER NEW USER MODAL -->
-    <div id="registerModal" class="fixed inset-0 bg-gray-900 hidden flex-col items-center justify-center z-[200] px-4">
+    <div id="registerModal" class="fixed inset-0 bg-cover bg-center bg-no-repeat hidden flex-col items-center justify-center z-[200] px-4" style="background: linear-gradient(rgba(0,0,0,0.65),rgba(0,0,0,0.65)),url('Landing Page Background.png') center/cover no-repeat">
+        <p id="registerDateTime" class="text-[10px] text-gray-400 font-mono mb-2"></p>
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl max-w-sm w-full border border-gray-100 text-center">
             <img src="1920px-Logo_Axioo_Baru.png" alt="Logo Axioo" class="h-8 mx-auto mb-6 object-contain">
             <h2 class="text-base font-bold text-gray-800 tracking-tight">Register New User</h2>
@@ -823,8 +825,20 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
             displayProducts(filtered);
         }
 
+        function updateDateTime() {
+            const now = new Date();
+            const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' };
+            const formatted = now.toLocaleDateString('id-ID', opts).replace(' pukul ', ' | ');
+            const el1 = document.getElementById('loginDateTime');
+            const el2 = document.getElementById('registerDateTime');
+            if (el1) el1.textContent = formatted;
+            if (el2) el2.textContent = formatted;
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             displayProducts(productsData);
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
         });
     </script>
 
