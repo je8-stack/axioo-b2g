@@ -309,7 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <body class="bg-gray-50 text-gray-900 font-sans antialiased w-full overflow-x-hidden">
 
     <!-- LANGKAH 1: MODIFIKASI STRUKTUR HTML (FORM LOGIN DENGAN LOGO AXIOO BARU) -->
-    <div id="loginOverlay" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-[100] px-4">
+    <div id="loginOverlay" class="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-[100] px-4">
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl max-w-sm w-full border border-gray-100 text-center">
             <!-- REVISI: Mengganti placeholder teks lama dengan file gambar logo komersial baru -->
             <img src="1920px-Logo_Axioo_Baru.png" alt="Logo Axioo" class="h-8 mx-auto mb-6 object-contain">
@@ -345,10 +345,12 @@ Forgot Password?</a>
                 </p>
             </div>
         </div>
+        <p class="text-xs text-gray-500 mt-6 font-semibold">&copy; Alward Jevon 2026</p>
+        <p class="text-[11px] text-gray-500 -mt-0.5">Axioo B2G Product Command Center</p>
     </div>
 
     <!-- REGISTER NEW USER MODAL -->
-    <div id="registerModal" class="fixed inset-0 bg-gray-900 hidden items-center justify-center z-[200] px-4">
+    <div id="registerModal" class="fixed inset-0 bg-gray-900 hidden flex-col items-center justify-center z-[200] px-4">
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl max-w-sm w-full border border-gray-100 text-center">
             <img src="1920px-Logo_Axioo_Baru.png" alt="Logo Axioo" class="h-8 mx-auto mb-6 object-contain">
             <h2 class="text-base font-bold text-gray-800 tracking-tight">Register New User</h2>
@@ -380,6 +382,8 @@ Forgot Password?</a>
                 </p>
             </div>
         </div>
+        <p class="text-xs text-gray-500 mt-6 font-semibold">&copy; Alward Jevon 2026</p>
+        <p class="text-[11px] text-gray-500 -mt-0.5">Axioo B2G Product Command Center</p>
     </div>
 
     <!-- PORTAL UTAMA KATALOG (Otomatis Tersembunyi 'hidden' Sebelum Akun Terverifikasi Sesi) -->
