@@ -784,7 +784,7 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
                         </div>
 
                         <div class="bg-gray-50 px-4 py-3.5 border-t border-gray-100 flex gap-2 w-full mt-auto">
-                            <a href="#" target="_blank" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="BB Comparison">
+                            <a href="index bbcomparison.html" onclick="return showLoading(event)" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="BB Comparison">
                                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
                             </a>
                             <a href="${getSpecFile(p.name) || '#'}" target="_blank" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="Spec Sheet">
@@ -875,6 +875,15 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
     </script>
 
 <!-- DOCUMENT PREVIEW MODAL -->
+<div id="loadingOverlay" class="fixed inset-0 bg-black/50 hidden flex-col items-center justify-center z-[99999]">
+  <div class="bg-white rounded-xl p-8 shadow-2xl flex flex-col items-center gap-4 min-w-[280px]">
+    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+      <div id="loadingBar" class="bg-blue-900 h-full rounded-full" style="width: 0%"></div>
+    </div>
+    <p class="text-xs text-gray-500 font-medium">Memuat BB Comparison...</p>
+  </div>
+</div>
+
 <div id="previewModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-[9999]">
   <div class="bg-white w-[95%] h-[90%] rounded-xl overflow-hidden shadow-2xl flex flex-col">
     <div class="flex justify-between items-center p-3 border-b">
@@ -902,28 +911,24 @@ function closePreview(){
     modal.classList.add('hidden');
     modal.classList.remove('flex');
 }
+function showLoading(e){
+    e.preventDefault();
+    const overlay = document.getElementById('loadingOverlay');
+    const bar = document.getElementById('loadingBar');
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+    let w = 0;
+    const interval = setInterval(() => {
+        w += Math.random() * 15;
+        if (w >= 90) { w = 90; clearInterval(interval); }
+        bar.style.width = w + '%';
+    }, 200);
+    setTimeout(() => {
+        clearInterval(interval);
+        bar.style.width = '100%';
+        setTimeout(() => { window.location.href = 'index bbcomparison.html'; }, 300);
+    }, 1500);
+}
 </script>
 </body>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    </head>
-<body>
-    <script type="module">
-        // Pastikan Anda sudah mengimpor Firebase SDK di atas sini
-        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-        
-        const auth = getAuth();
-
-        // MASUKKAN KODE ANDA DI SINI
-        async function handleFirebaseLogin() {
-            // ... isi fungsi login Anda
-        }
-
-        async function handlePasswordReset() {
-            // ... isi fungsi reset password Anda
-        }
-    </script>
-</body>
-</html>
 </html>
