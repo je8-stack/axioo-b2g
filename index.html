@@ -916,8 +916,11 @@ function showLoading(e){
     const overlay = document.getElementById('loadingOverlay');
     const bar = document.getElementById('loadingBar');
     const pct = document.getElementById('loadingPercent');
+    bar.style.transition = 'none';
     bar.style.width = '0%';
     pct.textContent = '0%';
+    void bar.offsetHeight;
+    bar.style.transition = 'width 0.15s linear';
     overlay.classList.remove('hidden');
     overlay.classList.add('flex');
     let w = 0, start = performance.now();
