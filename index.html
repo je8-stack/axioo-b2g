@@ -877,10 +877,10 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
 <!-- DOCUMENT PREVIEW MODAL -->
 <div id="loadingOverlay" class="fixed inset-0 bg-black/50 hidden flex-col items-center justify-center z-[99999]">
   <div class="bg-white rounded-xl p-8 shadow-2xl flex flex-col items-center gap-4 min-w-[280px]">
-    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-      <div id="loadingBar" class="bg-blue-900 h-full rounded-full" style="width: 0%"></div>
+    <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+      <div id="loadingBar" class="h-full rounded-full" style="width: 0%; background: linear-gradient(90deg, #f97316, #eab308, #22c55e, #3b82f6);"></div>
     </div>
-    <p class="text-xs text-gray-500 font-medium">Memuat BB Comparison...</p>
+    <p class="text-xs text-gray-500 font-medium">Memuat BB Comparison... <span id="loadingPercent">0%</span></p>
   </div>
 </div>
 
@@ -915,17 +915,20 @@ function showLoading(e){
     e.preventDefault();
     const overlay = document.getElementById('loadingOverlay');
     const bar = document.getElementById('loadingBar');
+    const pct = document.getElementById('loadingPercent');
     overlay.classList.remove('hidden');
     overlay.classList.add('flex');
     let w = 0;
     const interval = setInterval(() => {
-        w += Math.random() * 15;
+        w += Math.random() * 12;
         if (w >= 90) { w = 90; clearInterval(interval); }
         bar.style.width = w + '%';
-    }, 200);
+        pct.textContent = Math.round(w) + '%';
+    }, 180);
     setTimeout(() => {
         clearInterval(interval);
         bar.style.width = '100%';
+        pct.textContent = '100%';
         setTimeout(() => { window.location.href = 'index bbcomparison.html'; }, 300);
     }, 1500);
 }
