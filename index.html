@@ -784,7 +784,7 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
                         </div>
 
                         <div class="bg-gray-50 px-4 py-3.5 border-t border-gray-100 flex gap-2 w-full mt-auto">
-                            <a href="#" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="Spec Sheet">
+                            <a href="${getSpecFile(p.name) || '#'}" target="_blank" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="Spec Sheet">
                                 <i data-lucide="file-text" class="w-4 h-4"></i>
                             </a>
                             <a href="${p.name}.pdf" target="_blank" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="Unduh Brosur">
@@ -798,6 +798,35 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
             });
 
             lucide.createIcons();
+        }
+
+        function getSpecFile(productName) {
+            const base = productName.replace(/\s*\([^)]*\)$/, '').trim();
+            const map = {
+                "MyBook Pro E1": "SPEC MyBook Pro E1.xlsx",
+                "MyBook Pro H7": "SPEC MyBook Pro H7.xlsx",
+                "MyBook Pro H8": "SPEC MyBook PRO H8.xlsx",
+                "MyBook Pro 103.2": "SPEC MyBook Pro 103.2.xlsx",
+                "MyBook Pro K3": "SPEC Mybook Pro K3.xlsx",
+                "MyBook Pro L3": "SPEC MyBook Pro L3.xlsx",
+                "MyBook Pro L5": "SPEC MyBook Pro L5.xlsx",
+                "MyBook Pro M5": "SPEC MyBook PRO M5.xlsx",
+                "MyBook Pro K7.2": "SPEC Mybook Pro K7.2.xlsx",
+                "MyBook Pro L7": "SPEC MyBook Pro L7.xlsx",
+                "MyBook Pro L7V": "SPEC MyBook Pro L7V.xlsx",
+                "MyBook Pro M7T": "SPEC MyBook Pro M7T.xlsx",
+                "MyBook Pro A5": "SPEC MyBook Pro A5.xlsx",
+                "MyBook Pro A7": "SPEC MyBook PRO A7.xlsx",
+                "MyBook Pro A7V": "SPEC MyBook PRO A7V.xlsx",
+            };
+            if (base === "MyBook Prime 5") {
+                const v = productName.match(/\((\w+)\)/);
+                if (v) {
+                    if (v[1] === "KA1") return "SPEC MyBook Prime 5 KA1.xlsx";
+                    if (v[1] === "KB1") return "SPEC MyBook Prime 5 KB1.xlsx";
+                }
+            }
+            return map[base] || null;
         }
 
         function filterProducts() {
