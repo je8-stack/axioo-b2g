@@ -731,6 +731,28 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
                 return;
             }
 
+            const brochureFiles = new Set([
+  "MyBook Pro E1 (8N2)","MyBook Pro E1 (8N5)","MyBook Pro E1 (8N9)",
+  "MyBook Pro H7 (8S2)","MyBook Pro H7 (8S5)","MyBook Pro H7 (8S9)",
+  "MyBook Pro H8 (8S5)","MyBook Pro H8 (8S9)","MyBook Pro H8 (16S9)",
+  "MyBook Pro 103.2 (4S1)","MyBook Pro 103.2 (4S2)","MyBook Pro 103.2 (8S2)","MyBook Pro 103.2 (8S5)",
+  "MyBook Pro L3 (8N2)","MyBook Pro L3 (8N5)","MyBook Pro L3 (8N9)",
+  "MyBook Pro L5 (8N5)","MyBook Pro L5 (8N2)","MyBook Pro L5 (8N9)",
+  "MyBook Pro L7 (8N5)","MyBook Pro L7 (8N9)","MyBook Pro L7 (16N9)","MyBook Pro L7 (16N18)",
+  "MyBook Pro L7V (8N5)","MyBook Pro L7V (16N9)","MyBook Pro L7V (32N9)",
+  "MyBook Pro K5V (8N5)","MyBook Pro K5V (16N9)","MyBook Pro K5V (32N9)",
+  "MyBook Pro K7 (8N5)",
+  "MyBook Pro K7.2 (8N5)","MyBook Pro K7.2 (8N9)","MyBook Pro K7.2 (16N5)","MyBook Pro K7.2 (16N9)","MyBook Pro K7.2 (16N18)",
+  "MyBook Pro K7V (16N9)",
+  "MyBook Pro M7T (16N9)","MyBook Pro M7T (32N9)","MyBook Pro M7T (8N5)",
+  "MyBook Pro A5 (8N9)","MyBook Pro A5 (16N9)",
+  "MyBook Pro A7 (8N9)","MyBook Pro A7 (16N9)",
+  "MyBook Pro A7V (8N9)","MyBook Pro A7V (16N9)",
+  "MyBook Pro A7Z (16N9)",
+  "MyBook Pro 107 (8S9)","MyBook Pro 107 (8S5)","MyBook Pro 107 (16S9)","MyBook Pro 107 (16S5)","MyBook Pro 107 (16S18)"
+]);
+            const hasBrochure = brochureFiles.has(p.name);
+
             products.forEach(p => {
                 let statusBadge = '';
                 if (p.status) {
@@ -787,9 +809,13 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
                             <a href="#" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="Spec Sheet">
                                 <i data-lucide="file-text" class="w-4 h-4"></i>
                             </a>
-                            <a href="#" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="Unduh Brosur">
-                                <i data-lucide="image" class="w-4 h-4"></i>
-                            </a>
+                            ${hasBrochure
+                                ? `<a href="${p.name}.pdf" target="_blank" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="Unduh Brosur">
+                                    <i data-lucide="image" class="w-4 h-4"></i>
+                                   </a>`
+                                : `<span class="p-2 bg-gray-100 border border-gray-200 text-center text-xs font-medium rounded-md flex items-center justify-center text-gray-300 shrink-0 cursor-not-allowed" title="Brosur tidak tersedia">
+                                    <i data-lucide="image" class="w-4 h-4"></i>
+                                   </span>`}
                             ${lkppButton}
                         </div>
                     </div>
@@ -872,26 +898,4 @@ function closePreview(){
 }
 </script>
 </body>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    </head>
-<body>
-    <script type="module">
-        // Pastikan Anda sudah mengimpor Firebase SDK di atas sini
-        import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-        
-        const auth = getAuth();
-
-        // MASUKKAN KODE ANDA DI SINI
-        async function handleFirebaseLogin() {
-            // ... isi fungsi login Anda
-        }
-
-        async function handlePasswordReset() {
-            // ... isi fungsi reset password Anda
-        }
-    </script>
-</body>
-</html>
 </html>
