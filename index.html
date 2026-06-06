@@ -784,7 +784,7 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
                         </div>
 
                         <div class="bg-gray-50 px-4 py-3.5 border-t border-gray-100 flex gap-2 w-full mt-auto">
-                            <a href="index bbcomparison.html" onclick="return showLoading(event)" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="BB Comparison">
+                            <a href="index bbcomparison.html" onclick="return showLoading(event)" target="_blank" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="BB Comparison">
                                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
                             </a>
                             <a href="${getSpecFile(p.name) || '#'}" target="_blank" class="p-2 bg-white border border-gray-200 text-center text-xs font-medium rounded-md hover:bg-gray-100 transition flex items-center justify-center text-gray-500 shrink-0" title="Spec Sheet">
@@ -929,7 +929,7 @@ function showLoading(e){
         clearInterval(interval);
         bar.style.width = '100%';
         pct.textContent = '100%';
-        setTimeout(() => { window.location.href = 'index bbcomparison.html'; }, 300);
+        setTimeout(() => { window.open('index bbcomparison.html', '_blank'); overlay.classList.add('hidden'); overlay.classList.remove('flex'); }, 300);
     }, 1500);
 }
 </script>
