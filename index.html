@@ -1038,14 +1038,20 @@ function queryRAG() {
     let resolvedTarget = null;
 
     if (isCompare) {
-        const parts = q.replace(/\b(banding|perbandingan|compare|comparison|vs|versus)\b/g, '').split(/[,;&]+/).map(s => s.trim()).filter(Boolean);
+        const cleaned = q.replace(/\b(banding|perbandingan|compare|comparison|vs|versus|dengan)\b/g, ' ').trim();
         const prodNames = [];
-        parts.forEach(p => {
-            const found = aliases.find(a => p.includes(a.alias.toLowerCase()));
-            if (found) prodNames.push(found.target);
-            else {
-                const matched = products.filter(pr => pr.name.toLowerCase().includes(p));
-                matched.forEach(m => { if (!prodNames.includes(m.name)) prodNames.push(m.name); });
+        products.forEach(p => {
+            const escaped = p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp('\\b' + escaped + '\\b', 'i');
+            if (re.test(cleaned) && !prodNames.includes(p.name)) {
+                prodNames.push(p.name);
+            }
+        });
+        aliases.forEach(a => {
+            const escaped = a.alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp('\\b' + escaped + '\\b', 'i');
+            if (re.test(cleaned) && !prodNames.includes(a.target)) {
+                prodNames.push(a.target);
             }
         });
         if (prodNames.length < 2) {
@@ -1053,6 +1059,8 @@ function queryRAG() {
             products.slice(0, 3).forEach(p => prodNames.push(p.name));
             html += '<div class="text-xs text-gray-500 mb-2 italic">Menampilkan 3 produk pertama sebagai perbandingan:</div>';
         }
+        const prodMap = {};
+        products.forEach(p => { prodMap[p.name] = p; });
         html += '<div class="font-bold text-blue-700 text-xs uppercase tracking-wide">Perbandingan Produk</div>';
         html += '<div class="overflow-x-auto mt-2 rounded-lg border border-gray-200">';
         html += '<table class="w-full text-xs border-collapse">';
@@ -1068,7 +1076,7 @@ function queryRAG() {
             html += '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50') + '">';
             html += '<td class="p-2 font-semibold text-gray-600 border-b">' + labels[idx] + '</td>';
             prodNames.forEach(n => {
-                const prod = products.find(p => p.name === n);
+                const prod = prodMap[n];
                 html += '<td class="p-2 border-b border-l text-gray-700">' + (prod ? (prod[f] || '-') : '-') + '</td>';
             });
             html += '</tr>';
