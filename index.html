@@ -1029,16 +1029,116 @@ function queryRAG() {
         return alias ? alias.target : null;
     }
 
-    const isCompare = /\b(banding|perbandingan|compare|comparison|vs|versus)\b/.test(q);
+    const isTkdn = /\b(tkdn|bmp|tkdn.*bmp|skor.*tkdn|nilai.*tkdn)\b/.test(q);
     const isInventory = /\b(inventory|stock|stok|ready|tersedia)\b/.test(q);
     const isProcessorList = /\b(processor|cpu|prosesor|processor.*list|daftar.*processor|jenis.*processor)\b/.test(q);
-    const isTkdn = /\b(tkdn|bmp|tkdn.*bmp|skor.*tkdn|nilai.*tkdn)\b/.test(q);
+    const isCompare = /\b(banding|bandingkan|perbandingan|compare|comparison|vs|versus)\b/.test(q) && !isTkdn;
 
     let html = '';
     let resolvedTarget = null;
 
-    if (isCompare) {
-        const cleaned = q.replace(/\b(banding|perbandingan|compare|comparison|vs|versus|dengan)\b/g, ' ').trim();
+    function resolveAllAliases(qStr) {
+        const result = [];
+        aliases.forEach(a => {
+            const escaped = a.alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp('\\b' + escaped + '\\b', 'i');
+            if (re.test(qStr)) result.push(a);
+        });
+        return result;
+    }
+
+    function resolveAllProducts(qStr) {
+        const result = [];
+        products.forEach(p => {
+            const escaped = p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp('\\b' + escaped + '\\b', 'i');
+            if (re.test(qStr) && !result.find(x => x.name === p.name)) result.push(p);
+        });
+        return result;
+    }
+
+    if (isTkdn) {
+        const foundProducts = [];
+        products.forEach(p => {
+            const escaped = p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp('\\b' + escaped + '\\b', 'i');
+            if (re.test(q) && !foundProducts.find(x => x.name === p.name)) foundProducts.push(p);
+        });
+        aliases.forEach(a => {
+            const escaped = a.alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp('\\b' + escaped + '\\b', 'i');
+            if (re.test(q)) {
+                const prod = products.find(p => p.name === a.target);
+                if (prod && !foundProducts.find(x => x.name === prod.name)) foundProducts.push(prod);
+            }
+        });
+        if (foundProducts.length) {
+            html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide">TKDN+BMP Scores</div>';
+            foundProducts.forEach(p => {
+                const variants = matchVariants(p.name);
+                if (variants.length) {
+                    html += '<div class="mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs">';
+                    html += '<div class="font-bold text-emerald-900">' + p.name + ' <span class="text-gray-400 font-normal">(' + p.sku + ')</span></div>';
+                    variants.forEach(v => {
+                        const isTayang = v.statusTayang === 'Tayang';
+                        html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium">' + v.tkdn + (isTayang ? ' <span class="text-green-600">✓</span>' : '') + '</span></div>';
+                    });
+                    html += '</div>';
+                }
+            });
+        } else {
+            html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide">TKDN+BMP Seluruh Produk</div>';
+            const categories = {};
+            (typeof productsData !== 'undefined' ? productsData : []).forEach(v => {
+                const base = v.name.replace(/\s*\([^)]*\)$/, '').trim();
+                if (!categories[base]) categories[base] = { variants: [] };
+                categories[base].variants.push(v);
+            });
+            Object.entries(categories).forEach(([base, data]) => {
+                html += '<div class="mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs">';
+                html += '<div class="font-bold text-emerald-900">' + base + '</div>';
+                data.variants.forEach(v => {
+                    const isTayang = v.statusTayang === 'Tayang';
+                    html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium">' + v.tkdn + (isTayang ? ' <span class="text-green-600">✓ Tayang</span>' : ' <span class="text-red-400">Not Active</span>') + '</span></div>';
+                });
+                html += '</div>';
+            });
+        }
+        if (!html) html = '<div class="text-gray-400 text-center py-4 text-xs">Tidak ada data TKDN untuk produk ini.</div>';
+    } else if (isInventory) {
+        const target = resolveAlias(q);
+        const matched = target ? products.filter(p => p.name === target) : products.filter(p => p.name.toLowerCase().includes(q));
+        if (!matched.length) matched.push(products[0]);
+        html += '<div class="font-bold text-orange-700 text-xs uppercase tracking-wide">Info Inventory / Stok</div>';
+        matched.forEach(p => {
+            const variants = matchVariants(p.name);
+            if (variants.length) {
+                html += '<div class="mt-2 bg-orange-50 border border-orange-100 rounded-lg p-3 text-xs">';
+                html += '<div class="font-bold text-orange-900 mb-1">' + p.name + ' <span class="text-gray-400 font-normal">(' + p.sku + ')</span></div>';
+                variants.forEach(v => {
+                    const status = v.status || 'Tidak ada info';
+                    html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium ' + (status.toUpperCase().includes('READY') ? 'text-green-700' : 'text-amber-700') + '">' + status + '</span></div>';
+                });
+                html += '</div>';
+            }
+        });
+        if (!html) html = '<div class="text-gray-400 text-center py-4 text-xs">Tidak ada data inventory untuk produk ini.</div>';
+    } else if (isProcessorList) {
+        const processorSet = {};
+        products.forEach(p => {
+            const key = p.processor;
+            if (!processorSet[key]) processorSet[key] = [];
+            processorSet[key].push(p.name);
+        });
+        html += '<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide">Daftar Prosesor</div>';
+        Object.entries(processorSet).forEach(([proc, prods]) => {
+            html += '<div class="mt-2 bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs">';
+            html += '<div class="font-bold text-indigo-900">' + proc + '</div>';
+            html += '<div class="mt-1 text-gray-500">Digunakan oleh: ' + prods.join(', ') + '</div>';
+            html += '</div>';
+        });
+    } else if (isCompare) {
+        const cleaned = q.replace(/\b(banding|bandingkan|perbandingan|compare|comparison|vs|versus|dengan)\b/g, ' ').trim();
         const prodNames = [];
         products.forEach(p => {
             const escaped = p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1082,74 +1182,6 @@ function queryRAG() {
             html += '</tr>';
         });
         html += '</tbody></table></div>';
-    } else if (isInventory) {
-        const target = resolveAlias(q);
-        const matched = target ? products.filter(p => p.name === target) : products.filter(p => p.name.toLowerCase().includes(q));
-        if (!matched.length) matched.push(products[0]);
-        html += '<div class="font-bold text-orange-700 text-xs uppercase tracking-wide">Info Inventory / Stok</div>';
-        matched.forEach(p => {
-            const variants = matchVariants(p.name);
-            if (variants.length) {
-                html += '<div class="mt-2 bg-orange-50 border border-orange-100 rounded-lg p-3 text-xs">';
-                html += '<div class="font-bold text-orange-900 mb-1">' + p.name + ' <span class="text-gray-400 font-normal">(' + p.sku + ')</span></div>';
-                variants.forEach(v => {
-                    const status = v.status || 'Tidak ada info';
-                    html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium ' + (status.toUpperCase().includes('READY') ? 'text-green-700' : 'text-amber-700') + '">' + status + '</span></div>';
-                });
-                html += '</div>';
-            }
-        });
-        if (!html) html = '<div class="text-gray-400 text-center py-4 text-xs">Tidak ada data inventory untuk produk ini.</div>';
-    } else if (isProcessorList) {
-        const processorSet = {};
-        products.forEach(p => {
-            const key = p.processor;
-            if (!processorSet[key]) processorSet[key] = [];
-            processorSet[key].push(p.name);
-        });
-        html += '<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide">Daftar Prosesor</div>';
-        Object.entries(processorSet).forEach(([proc, prods]) => {
-            html += '<div class="mt-2 bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs">';
-            html += '<div class="font-bold text-indigo-900">' + proc + '</div>';
-            html += '<div class="mt-1 text-gray-500">Digunakan oleh: ' + prods.join(', ') + '</div>';
-            html += '</div>';
-        });
-    } else if (isTkdn) {
-        const target = resolveAlias(q);
-        const matched = target ? products.filter(p => p.name === target) : products.filter(p => p.name.toLowerCase().includes(q));
-        if (!matched.length) {
-            html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide">TKDN+BMP Seluruh Produk</div>';
-            const categories = {};
-            (typeof productsData !== 'undefined' ? productsData : []).forEach(v => {
-                const base = v.name.replace(/\s*\([^)]*\)$/, '').trim();
-                if (!categories[base]) categories[base] = { variants: [] };
-                categories[base].variants.push(v);
-            });
-            Object.entries(categories).forEach(([base, data]) => {
-                html += '<div class="mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs">';
-                html += '<div class="font-bold text-emerald-900">' + base + '</div>';
-                data.variants.forEach(v => {
-                    const isTayang = v.statusTayang === 'Tayang';
-                    html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium">' + v.tkdn + (isTayang ? ' <span class="text-green-600">✓ Tayang</span>' : ' <span class="text-red-400">Not Active</span>') + '</span></div>';
-                });
-                html += '</div>';
-            });
-        } else {
-            html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide">TKDN+BMP Scores</div>';
-            matched.forEach(p => {
-                const variants = matchVariants(p.name);
-                if (variants.length) {
-                    html += '<div class="mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs">';
-                    html += '<div class="font-bold text-emerald-900">' + p.name + ' <span class="text-gray-400 font-normal">(' + p.sku + ')</span></div>';
-                    variants.forEach(v => {
-                        const isTayang = v.statusTayang === 'Tayang';
-                        html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium">' + v.tkdn + (isTayang ? ' <span class="text-green-600">✓</span>' : '') + '</span></div>';
-                    });
-                    html += '</div>';
-                }
-            });
-        }
-        if (!html) html = '<div class="text-gray-400 text-center py-4 text-xs">Tidak ada data TKDN untuk produk ini.</div>';
     } else {
         const aliasMatch = aliases.filter(a => a.alias.toLowerCase().includes(q) || a.target.toLowerCase().includes(q));
         const productMatch = products.filter(p => Object.values(p).some(v => typeof v === 'string' && v.toLowerCase().includes(q)));
