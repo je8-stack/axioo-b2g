@@ -1032,10 +1032,40 @@ function queryRAG() {
     const isTkdn = /\b(tkdn|bmp|tkdn.*bmp|skor.*tkdn|nilai.*tkdn)\b/.test(q);
     const isInventory = /\b(inventory|stock|stok|ready|tersedia)\b/.test(q);
     const isProcessorList = /\b(processor|cpu|prosesor|processor.*list|daftar.*processor|jenis.*processor)\b/.test(q);
-    const isCompare = /\b(banding|bandingkan|perbandingan|compare|comparison|vs|versus)\b/.test(q) && !isTkdn;
+    const isCompare = /\b(banding|bandingkan|perbandingan|compare|comparison|vs|versus|atau|mana.*lebih|lebih.*bagus|apa.*beda|perbedaan)\b/.test(q) && !isTkdn;
 
     let html = '';
     let resolvedTarget = null;
+
+    const mentionedProducts = [];
+    products.forEach(p => {
+        const re = new RegExp('\\b' + p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+        if (re.test(q) && !mentionedProducts.find(x => x.name === p.name)) mentionedProducts.push(p);
+    });
+    aliases.forEach(a => {
+        const re = new RegExp('\\b' + a.alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+        if (re.test(q)) {
+            const prod = products.find(p => p.name === a.target);
+            if (prod && !mentionedProducts.find(x => x.name === prod.name)) mentionedProducts.push(prod);
+        }
+    });
+    const baseProductMap = {};
+    (typeof productsData !== 'undefined' ? productsData : []).forEach(v => {
+        const base = v.name.replace(/\s*\([^)]*\)$/, '').trim();
+        if (!baseProductMap[base]) baseProductMap[base] = [];
+        baseProductMap[base].push(v);
+    });
+    Object.entries(baseProductMap).forEach(([base, variants]) => {
+        const re = new RegExp('\\b' + base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+        if (re.test(q) && !mentionedProducts.find(x => x.name === base)) {
+            mentionedProducts.push({ name: base, sku: variants[0].sku || base, _variants: variants, _fromPD: true });
+        }
+    });
+    const fieldMap = {processor:/\b(processor|cpu|prosesor)\b/i,ram:/\b(ram|memory|memori)\b/i,storage:/\b(storage|ssd|hdd|penyimpanan)\b/i,graphics:/\b(gpu|graphics|graphic|vga|kartu grafis)\b/i,display:/\b(layar|display|screen|resolusi)\b/i,os:/\b(os|sistem operasi|windows)\b/i,npu:/\b(npu|ai)\b/i};
+    const fieldLabels = {processor:'CPU',ram:'RAM',storage:'Storage',graphics:'GPU',display:'Layar',os:'OS',npu:'NPU'};
+    let askedField = null;
+    for (const [f, re] of Object.entries(fieldMap)) { if (re.test(q)) { askedField = f; break; } }
+    const isFilterQuery = /\b(apa saja|yang.*tersedia|list.*dengan|produk.*dengan)\b/i.test(q) && !mentionedProducts.length;
 
     function resolveAllAliases(qStr) {
         const result = [];
@@ -1058,46 +1088,66 @@ function queryRAG() {
     }
 
     if (isTkdn) {
-        const foundProducts = [];
-        products.forEach(p => {
-            const escaped = p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const re = new RegExp('\\b' + escaped + '\\b', 'i');
-            if (re.test(q) && !foundProducts.find(x => x.name === p.name)) foundProducts.push(p);
-        });
-        aliases.forEach(a => {
-            const escaped = a.alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const re = new RegExp('\\b' + escaped + '\\b', 'i');
-            if (re.test(q)) {
-                const prod = products.find(p => p.name === a.target);
-                if (prod && !foundProducts.find(x => x.name === prod.name)) foundProducts.push(prod);
-            }
-        });
-        if (foundProducts.length) {
-            html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide">TKDN+BMP Scores</div>';
-            foundProducts.forEach(p => {
-                const variants = matchVariants(p.name);
-                if (variants.length) {
-                    html += '<div class="mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs">';
-                    html += '<div class="font-bold text-emerald-900">' + p.name + ' <span class="text-gray-400 font-normal">(' + p.sku + ')</span></div>';
-                    variants.forEach(v => {
-                        const isTayang = v.statusTayang === 'Tayang';
-                        html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium">' + v.tkdn + (isTayang ? ' <span class="text-green-600">✓</span>' : '') + '</span></div>';
-                    });
-                    html += '</div>';
-                }
+        const askCert = /\b(sertifikat|no sertifikat|nomor sertifikat|no\.?\s*sertifikat)\b/i.test(q);
+        const filterMatch = q.match(/\b((?:di atas|lebih dari|melebihi|>|≥)\s*)(\d+(?:\.\d+)?)\s*%/i) || q.match(/\b(\d+(?:\.\d+)?)\s*%\s*(?:ke atas|lebih|dan di atas)\b/i);
+        const filterBelow = q.match(/\b((?:di bawah|kurang dari|<|≤)\s*)(\d+(?:\.\d+)?)\s*%/i);
+        let threshold = null, belowThreshold = null;
+        if (filterMatch) threshold = parseFloat(filterMatch[2]);
+        if (filterBelow) belowThreshold = parseFloat(filterBelow[2]);
+        const pd = typeof productsData !== 'undefined' ? productsData : [];
+
+        if (threshold !== null || belowThreshold !== null) {
+            const t = threshold || belowThreshold;
+            const op = threshold ? (v => !isNaN(parseFloat(v.tkdn)) && parseFloat(v.tkdn) > t) : (v => !isNaN(parseFloat(v.tkdn)) && parseFloat(v.tkdn) < t);
+            const filtered = pd.filter(op);
+            const categories = {};
+            filtered.forEach(v => {
+                const base = v.name.replace(/\s*\([^)]*\)$/, '').trim();
+                if (!categories[base]) categories[base] = [];
+                categories[base].push(v);
             });
+            html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide">TKDN+BMP ' + (threshold ? 'di atas ' + threshold + '%' : 'di bawah ' + belowThreshold + '%') + '</div>';
+            Object.entries(categories).forEach(([base, variants]) => {
+                html += '<div class="mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs"><div class="font-bold text-emerald-900">' + base + '</div>';
+                variants.forEach(v => html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium">' + v.tkdn + '</span></div>');
+                html += '</div>';
+            });
+        } else if (mentionedProducts.length) {
+            if (askCert) {
+                html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide">No. Sertifikat TKDN+BMP</div>';
+                mentionedProducts.forEach(p => {
+                    const variants = p._fromPD ? p._variants : matchVariants(p.name);
+                    if (variants && variants.length) {
+                        html += '<div class="mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs"><div class="font-bold text-emerald-900">' + p.name + '</div>';
+                        variants.forEach(v => {
+                            const noSertif = v.noSertif && v.noSertif !== '-' ? v.noSertif : '<span class="text-amber-600">Belum punya sertifikat</span>';
+                            html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium">' + noSertif + (v.statusTayang === 'Tayang' ? ' <span class="text-green-600">✓ Tayang</span>' : '') + '</span></div>';
+                        });
+                        html += '</div>';
+                    }
+                });
+            } else {
+                html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide">TKDN+BMP Scores</div>';
+                mentionedProducts.forEach(p => {
+                    const variants = p._fromPD ? p._variants : matchVariants(p.name);
+                    if (variants && variants.length) {
+                        html += '<div class="mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs"><div class="font-bold text-emerald-900">' + p.name + '</div>';
+                        variants.forEach(v => html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium">' + v.tkdn + (v.statusTayang === 'Tayang' ? ' <span class="text-green-600">✓</span>' : '') + '</span></div>');
+                        html += '</div>';
+                    }
+                });
+            }
         } else {
             html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide">TKDN+BMP Seluruh Produk</div>';
             const categories = {};
-            (typeof productsData !== 'undefined' ? productsData : []).forEach(v => {
+            pd.forEach(v => {
                 const base = v.name.replace(/\s*\([^)]*\)$/, '').trim();
-                if (!categories[base]) categories[base] = { variants: [] };
-                categories[base].variants.push(v);
+                if (!categories[base]) categories[base] = [];
+                categories[base].push(v);
             });
-            Object.entries(categories).forEach(([base, data]) => {
-                html += '<div class="mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs">';
-                html += '<div class="font-bold text-emerald-900">' + base + '</div>';
-                data.variants.forEach(v => {
+            Object.entries(categories).forEach(([base, variants]) => {
+                html += '<div class="mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs"><div class="font-bold text-emerald-900">' + base + '</div>';
+                variants.forEach(v => {
                     const isTayang = v.statusTayang === 'Tayang';
                     html += '<div class="flex justify-between py-0.5"><span>' + v.name + '</span><span class="font-medium">' + v.tkdn + (isTayang ? ' <span class="text-green-600">✓ Tayang</span>' : ' <span class="text-red-400">Not Active</span>') + '</span></div>';
                 });
@@ -1138,8 +1188,9 @@ function queryRAG() {
             html += '</div>';
         });
     } else if (isCompare) {
-        const cleaned = q.replace(/\b(banding|bandingkan|perbandingan|compare|comparison|vs|versus|dengan)\b/g, ' ').trim();
+        const cleaned = q.replace(/\b(banding|bandingkan|perbandingan|compare|comparison|vs|versus|dengan|atau|mana|lebih|bagus|apa|beda|perbedaan|semua|dan)\b/g, ' ').trim();
         const prodNames = [];
+        const prodGroupMap = {};
         products.forEach(p => {
             const escaped = p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const re = new RegExp('\\b' + escaped + '\\b', 'i');
@@ -1155,9 +1206,70 @@ function queryRAG() {
             }
         });
         if (prodNames.length < 2) {
-            prodNames.length = 0;
-            products.slice(0, 3).forEach(p => prodNames.push(p.name));
-            html += '<div class="text-xs text-gray-500 mb-2 italic">Menampilkan 3 produk pertama sebagai perbandingan:</div>';
+            const ignoreWords = ['banding','bandingkan','semua','dengan','dan','atau','yang','lebih','bagus','mana','beda','perbedaan','apa'];
+            const cleanForSpec = cleaned.replace(/[^\w\s]/g, '').toLowerCase();
+            const specTerms = cleanForSpec.split(/\s+/).filter(w => w.length > 1 && !ignoreWords.includes(w));
+            function matchSpecProducts(term) {
+                return products.filter(p =>
+                    (p.processor && p.processor.toLowerCase().includes(term)) ||
+                    (p.ram && p.ram.toLowerCase().includes(term)) ||
+                    (p.storage && p.storage.toLowerCase().includes(term)) ||
+                    (p.graphics && p.graphics.toLowerCase().includes(term)) ||
+                    (p.display && p.display.toLowerCase().includes(term)) ||
+                    (p.os && p.os.toLowerCase().includes(term)) ||
+                    (p.npu && p.npu.toLowerCase().includes(term))
+                );
+            }
+            const candidateGroups = [];
+            for (let len = 3; len >= 2; len--) {
+                for (let i = 0; i <= specTerms.length - len; i++) {
+                    const phrase = specTerms.slice(i, i+len).join(' ');
+                    if (!candidateGroups.find(g => g.term === phrase)) {
+                        const matched = matchSpecProducts(phrase);
+                        if (matched.length > 0 && matched.length < products.length) {
+                            candidateGroups.push({ term: phrase, products: matched });
+                        }
+                    }
+                }
+            }
+            specTerms.forEach(w => {
+                if (candidateGroups.find(g => g.term.includes(w) || g.term === w)) return;
+                const matched = matchSpecProducts(w);
+                if (matched.length > 0 && matched.length < products.length) {
+                    candidateGroups.push({ term: w, products: matched });
+                }
+            });
+            candidateGroups.sort((a, b) => {
+                const diff = a.products.length - b.products.length;
+                if (diff !== 0) return diff;
+                return b.term.length - a.term.length;
+            });
+            const selected = [];
+            const usedInGroups = new Set();
+            for (const g of candidateGroups) {
+                if (selected.length >= 3) break;
+                const newProds = g.products.filter(p => !usedInGroups.has(p.name));
+                if (newProds.length > 0) {
+                    selected.push(g);
+                    g.products.forEach(p => usedInGroups.add(p.name));
+                }
+            }
+            if (selected.length >= 2) {
+                selected.forEach(g => {
+                    g.products.forEach(p => { prodGroupMap[p.name] = g.term; });
+                });
+                prodNames.length = 0;
+                selected.forEach(g => {
+                    g.products.forEach(p => {
+                        if (!prodNames.includes(p.name)) prodNames.push(p.name);
+                    });
+                });
+                html += '<div class="text-xs text-gray-500 mb-2 italic">Perbandingan grup spesifikasi:</div>';
+            } else {
+                prodNames.length = 0;
+                products.slice(0, 3).forEach(p => prodNames.push(p.name));
+                html += '<div class="text-xs text-gray-500 mb-2 italic">Menampilkan 3 produk pertama sebagai perbandingan:</div>';
+            }
         }
         const prodMap = {};
         products.forEach(p => { prodMap[p.name] = p; });
@@ -1167,7 +1279,8 @@ function queryRAG() {
         html += '<thead><tr class="bg-blue-50">';
         html += '<th class="p-2 text-left font-semibold text-gray-600 border-b">Spesifikasi</th>';
         prodNames.forEach(n => {
-            html += '<th class="p-2 text-left font-semibold text-blue-900 border-b border-l">' + n + '</th>';
+            const suffix = prodGroupMap[n] ? ' (' + prodGroupMap[n] + ')' : '';
+            html += '<th class="p-2 text-left font-semibold text-blue-900 border-b border-l">' + n + suffix + '</th>';
         });
         html += '</tr></thead><tbody>';
         const fields = ['processor', 'ram', 'storage', 'graphics', 'display', 'os', 'npu'];
@@ -1182,6 +1295,42 @@ function queryRAG() {
             html += '</tr>';
         });
         html += '</tbody></table></div>';
+    } else if (mentionedProducts.length || isFilterQuery || /\b(berapa|berapakah|spesifikasi|spec|menggunakan)\b/i.test(q)) {
+        if (mentionedProducts.length) {
+            if (askedField) {
+                html += '<div class="font-bold text-blue-700 text-xs uppercase tracking-wide">'+fieldLabels[askedField]+'</div>';
+                mentionedProducts.forEach(p => {
+                    if (p._fromPD) {
+                        p._variants.forEach(v => {
+                            html += '<div class="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs"><div class="font-bold text-blue-900">'+v.name+'</div><div class="mt-1 text-gray-700">'+fieldLabels[askedField]+': '+(v[askedField]||v[askedField.replace(/^storage$/,'storage').replace(/^display$/,'screen')]||'-')+'</div></div>';
+                        });
+                    } else {
+                        html += '<div class="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs"><div class="font-bold text-blue-900">'+p.name+'</div><div class="mt-1 text-gray-700">'+fieldLabels[askedField]+': '+(p[askedField]||'-')+'</div></div>';
+                    }
+                });
+            } else {
+                html += '<div class="font-bold text-blue-700 text-xs uppercase tracking-wide">Spesifikasi Produk</div>';
+                mentionedProducts.forEach(p => {
+                    if (p._fromPD) {
+                        p._variants.forEach(v => {
+                            html += '<div class="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs"><div class="font-bold text-blue-900">'+v.name+'</div><div class="mt-1 text-gray-600 space-y-0.5"><div>CPU: '+v.processor+'</div><div>RAM: '+v.ram+' | Storage: '+v.storage+'</div><div>Layar: '+v.screen+' | OS: '+v.os+'</div></div></div>';
+                        });
+                    } else {
+                        html += '<div class="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs"><div class="font-bold text-blue-900">'+p.name+' <span class="text-gray-400 font-normal">('+p.sku+')</span></div><div class="mt-1 text-gray-600 space-y-0.5"><div>CPU: '+p.processor+'</div><div>RAM: '+p.ram+' | Storage: '+p.storage+'</div><div>Layar: '+p.display+' | OS: '+p.os+'</div><div>GPU: '+p.graphics+(p.npu?' | NPU: '+p.npu:'')+'</div></div></div>';
+                    }
+                });
+            }
+        } else if (isFilterQuery) {
+            const filterText = q.replace(/\b(apa|saja|yang|tersedia|laptop|notebook|produk|list|dengan)\b/g,'').replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim();
+            const matched = products.filter(p => Object.values(p).some(v => typeof v === 'string' && v.toLowerCase().includes(filterText)));
+            if (matched.length) {
+                html += '<div class="font-bold text-blue-700 text-xs uppercase tracking-wide">Produk dengan spesifikasi terkait</div>';
+                matched.forEach(p => {
+                    html += '<div class="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs"><div class="font-bold text-blue-900">'+p.name+' <span class="text-gray-400 font-normal">('+p.sku+')</span></div><div class="mt-1 text-gray-600 space-y-0.5"><div>CPU: '+p.processor+'</div><div>RAM: '+p.ram+' | Storage: '+p.storage+'</div><div>Layar: '+p.display+' | OS: '+p.os+'</div><div>GPU: '+p.graphics+(p.npu?' | NPU: '+p.npu:'')+'</div></div></div>';
+                });
+            }
+        }
+        if (!html) html = '<div class="text-gray-400 text-center py-4 text-xs">Tidak ada data spesifikasi untuk produk ini.</div>';
     } else {
         const aliasMatch = aliases.filter(a => a.alias.toLowerCase().includes(q) || a.target.toLowerCase().includes(q));
         const productMatch = products.filter(p => Object.values(p).some(v => typeof v === 'string' && v.toLowerCase().includes(q)));
