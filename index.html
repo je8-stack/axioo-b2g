@@ -894,15 +894,20 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
         <i data-lucide="bot" class="w-5 h-5 text-purple-600"></i>
         <h3 class="font-bold text-sm">AI Product Assistant</h3>
       </div>
-      <button onclick="closeRAG()" class="p-1.5 hover:bg-gray-100 rounded-lg transition">
-        <i data-lucide="x" class="w-4 h-4"></i>
-      </button>
+      <div class="flex items-center gap-2">
+        <button id="ragBackBtn" onclick="resetRAG()" class="hidden px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg transition flex items-center gap-1">
+          <i data-lucide="plus" class="w-3 h-3"></i> Ask AI
+        </button>
+        <button onclick="closeRAG()" class="p-1.5 hover:bg-gray-100 rounded-lg transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
     </div>
     <div id="ragResults" class="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
       <div class="text-center text-gray-400 py-8">
         <i data-lucide="message-circle" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-        <p>Tanyakan sesuatu tentang produk, spesifikasi, atau sertifikat.</p>
-        <p class="text-xs mt-1">Contoh: "Laptop dengan i7-1255U" atau "SKU dengan RAM 16GB"</p>
+        <p>Tanyakan sesuatu tentang produk, spesifikasi, atau tender.</p>
+        <p class="text-xs mt-1">Contoh: "L7V", "RAM 16GB", atau "aturan tender pemerintah"</p>
       </div>
     </div>
     <div class="border-t p-3 flex gap-2 shrink-0">
@@ -973,85 +978,130 @@ function showLoading(e){
 var ragData = null;
 async function loadRAGData() {
     try {
-        const [aliases, products, tkdn] = await Promise.all([
+        const [aliases, products, tkdn, inventory, documents, comparison, tender_rules] = await Promise.all([
             fetch('aliases.json').then(r=>r.json()),
             fetch('products.json').then(r=>r.json()),
-            fetch('tkdn.json').then(r=>r.json())
+            fetch('tkdn.json').then(r=>r.json()),
+            fetch('inventory.json').then(r=>r.json()),
+            fetch('documents.json').then(r=>r.json()),
+            fetch('comparison.json').then(r=>r.json()),
+            fetch('tender_rules.json').then(r=>r.json())
         ]);
-        ragData = { aliases, products, tkdn };
+        ragData = { aliases: aliases.aliases || aliases, products: products.products || products, tkdn: tkdn.tkdn || tkdn, inventory: inventory.inventory || inventory, documents: documents.documents || documents, comparison: comparison.comparison_fields || comparison, tender_rules: tender_rules.rules || tender_rules };
     } catch(e) { console.error('RAG load error', e); }
 }
 function openRAG() {
     document.getElementById('ragModal').classList.remove('hidden');
     document.getElementById('ragModal').classList.add('flex');
     document.getElementById('ragInput').focus();
+    document.getElementById('ragBackBtn').classList.add('hidden');
     lucide.createIcons();
 }
 function closeRAG() {
     document.getElementById('ragModal').classList.add('hidden');
     document.getElementById('ragModal').classList.remove('flex');
 }
+function resetRAG() {
+    document.getElementById('ragInput').value = '';
+    document.getElementById('ragResults').innerHTML =
+      '<div class="text-center text-gray-400 py-8">' +
+        '<i data-lucide="message-circle" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>' +
+        '<p>Tanyakan sesuatu tentang produk, spesifikasi, atau tender.</p>' +
+        '<p class="text-xs mt-1">Contoh: "L7V", "RAM 16GB", atau "aturan tender pemerintah"</p>' +
+      '</div>';
+    document.getElementById('ragBackBtn').classList.add('hidden');
+    document.getElementById('ragInput').focus();
+    lucide.createIcons();
+}
 function queryRAG() {
     const q = document.getElementById('ragInput').value.trim().toLowerCase();
     if (!q || !ragData) return;
     const results = document.getElementById('ragResults');
-    const aliasMatch = Object.entries(ragData.aliases).filter(([k,v])=>k.toLowerCase().includes(q)||v.toLowerCase().includes(q));
-    const productMatch = ragData.products.filter(p=>
-        Object.values(p).some(v=>typeof v==='string'&&v.toLowerCase().includes(q))
+    const { aliases, products, tkdn, inventory, documents, comparison, tender_rules } = ragData;
+
+    const aliasMatch = aliases.filter(a => a.alias.toLowerCase().includes(q) || a.target.toLowerCase().includes(q));
+    const productMatch = products.filter(p => Object.values(p).some(v => typeof v === 'string' && v.toLowerCase().includes(q)));
+    const tkdnMatch = tkdn.filter(t => Object.values(t).some(v => typeof v === 'string' && v.toLowerCase().includes(q)));
+    const inventoryMatch = inventory.filter(i => Object.values(i).some(v => typeof v === 'string' && v.toLowerCase().includes(q)));
+    const docMatch = documents.filter(d => Object.values(d).some(v => typeof v === 'string' && v.toLowerCase().includes(q)));
+    const ruleMatch = tender_rules.filter(r =>
+        (r.rule_name && r.rule_name.toLowerCase().includes(q)) ||
+        (r.conditions && Object.values(r.conditions).some(v => typeof v === 'string' && v.toLowerCase().includes(q)))
     );
-    const tkdnMatch = ragData.tkdn.filter(t=>
-        Object.values(t).some(v=>typeof v==='string'&&v.toLowerCase().includes(q))
-    );
+
     let html = '';
-    const baseNames = new Set();
     if (aliasMatch.length) {
         html += '<div class="font-bold text-purple-700 text-xs uppercase tracking-wide mt-2">Alias / Kode Produk</div>';
-        aliasMatch.forEach(([k,v])=>{
-            baseNames.add(v);
-            const skus = ragData.tkdn.filter(t=>t.name.startsWith(v));
+        aliasMatch.forEach(a => {
+            const prod = products.find(p => p.sku === a.sku || p.name === a.target);
             html += `<div class="bg-purple-50 border border-purple-100 rounded-lg p-3 text-xs">
-                <span class="font-bold">${k}</span> → <span class="text-purple-700">${v}</span>
-                ${skus.length ? '<div class="mt-1 text-gray-500">SKU: '+skus.map(s=>s.name).join(', ')+'</div>' : ''}
+                <span class="font-bold">${a.alias}</span> → <span class="text-purple-700">${a.target}</span>
+                ${prod ? '<div class="mt-1 text-gray-500">SKU: ' + prod.sku + '</div>' : ''}
             </div>`;
         });
     }
     if (productMatch.length) {
         html += '<div class="font-bold text-blue-700 text-xs uppercase tracking-wide mt-3">Spesifikasi Produk</div>';
-        productMatch.forEach(p=>{
-            baseNames.add(p.name);
+        productMatch.forEach(p => {
             html += `<div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs">
-                <div class="font-bold text-blue-900">${p.name}</div>
+                <div class="font-bold text-blue-900">${p.name} <span class="text-gray-400 font-normal">(${p.sku})</span></div>
                 <div class="mt-1 text-gray-600 space-y-0.5">
                     <div>CPU: ${p.processor}</div>
                     <div>RAM: ${p.ram} | Storage: ${p.storage}</div>
                     <div>Layar: ${p.display} | OS: ${p.os}</div>
-                    <div>GPU: ${p.graphics}</div>
-                    <div>Berat: ${p.weight} | Dimensi: ${p.dimension}</div>
+                    <div>GPU: ${p.graphics}${p.npu ? ' | NPU: ' + p.npu : ''}</div>
                 </div>
             </div>`;
         });
     }
     if (tkdnMatch.length) {
-        html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide mt-3">Data TKDN & Sertifikat</div>';
-        tkdnMatch.slice(0,8).forEach(t=>{
+        html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide mt-3">Data TKDN</div>';
+        tkdnMatch.forEach(t => {
             html += `<div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs">
-                <div class="font-bold text-emerald-900">${t.name}</div>
-                <div class="mt-1 text-gray-600">TKDN+BMP: ${t.tkdn_bmp} | Status: ${t.lkpp_status}</div>
-                <div class="text-gray-500">Sertifikat: ${t.certificate_number}</div>
-                <div class="text-gray-500">Status Internal: ${t.internal_status || '-'}</div>
+                <div class="font-bold text-emerald-900">${t.name} <span class="text-gray-400 font-normal">(${t.sku})</span></div>
+                <div class="mt-1 text-gray-500">SKU: ${t.sku}</div>
             </div>`;
         });
-        if (tkdnMatch.length > 8) html += `<div class="text-xs text-gray-400 text-center">...dan ${tkdnMatch.length-8} hasil lainnya</div>`;
+    }
+    if (inventoryMatch.length) {
+        html += '<div class="font-bold text-orange-700 text-xs uppercase tracking-wide mt-3">Inventory</div>';
+        inventoryMatch.forEach(i => {
+            html += `<div class="bg-orange-50 border border-orange-100 rounded-lg p-3 text-xs">
+                <div class="font-bold text-orange-900">${i.name}</div>
+                <div class="mt-1 text-gray-500">SKU: ${i.sku}</div>
+            </div>`;
+        });
+    }
+    if (docMatch.length) {
+        html += '<div class="font-bold text-sky-700 text-xs uppercase tracking-wide mt-3">Dokumen</div>';
+        docMatch.forEach(d => {
+            html += `<div class="bg-sky-50 border border-sky-100 rounded-lg p-3 text-xs">
+                <div class="font-bold text-sky-900">${d.name}</div>
+                <div class="mt-1 text-gray-500">SKU: ${d.sku}</div>
+            </div>`;
+        });
+    }
+    if (ruleMatch.length) {
+        html += '<div class="font-bold text-rose-700 text-xs uppercase tracking-wide mt-3">Aturan Tender</div>';
+        ruleMatch.forEach(r => {
+            const cond = r.conditions || {};
+            const condHtml = Object.entries(cond).map(([k,v]) => k + ': ' + v).join(' | ');
+            html += `<div class="bg-rose-50 border border-rose-100 rounded-lg p-3 text-xs">
+                <div class="font-bold text-rose-900">${r.rule_name}</div>
+                ${condHtml ? '<div class="mt-1 text-gray-600">' + condHtml + '</div>' : ''}
+            </div>`;
+        });
     }
     if (!html) {
-        const suggestion = Object.keys(ragData.aliases).find(k=>k.toLowerCase().includes(q)) || '';
+        const suggestion = aliases.find(a => a.alias.toLowerCase().includes(q));
         html = `<div class="text-center text-gray-400 py-8">
             <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
             <p>Tidak ditemukan hasil untuk "${document.getElementById('ragInput').value}"</p>
-            ${suggestion ? '<p class="text-xs mt-2">Mungkin maksud: <b>'+suggestion+'</b></p>' : ''}
+            ${suggestion ? '<p class="text-xs mt-2">Mungkin maksud: <b>' + suggestion.alias + '</b></p>' : ''}
         </div>`;
     }
     results.innerHTML = html;
+    document.getElementById('ragBackBtn').classList.remove('hidden');
     lucide.createIcons();
 }
 loadRAGData();

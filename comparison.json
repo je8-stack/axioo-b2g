@@ -1,0 +1,11 @@
+{
+  "comparison_fields": [
+    "Processor",
+    "Graphics",
+    "RAM",
+    "Storage",
+    "Display",
+    "OS",
+    "NPU"
+  ]
+}

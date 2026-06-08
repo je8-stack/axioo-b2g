@@ -1,0 +1,11 @@
+{
+  "rules": [
+    {
+      "rule_name": "Government Procurement",
+      "conditions": {
+        "lkpp_status": "Tayang",
+        "tkdn_min": 40
+      }
+    }
+  ]
+}
