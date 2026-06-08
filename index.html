@@ -1030,7 +1030,7 @@ function queryRAG() {
     }
 
     const isTkdn = /\b(tkdn|bmp|tkdn.*bmp|skor.*tkdn|nilai.*tkdn)\b/.test(q);
-    const isInventory = /\b(inventory|stock|stok|ready|tersedia)\b/.test(q);
+    const isInventory = /\b(inventory|stock|stok|ready)\b/.test(q) || (/\btersedia\b/.test(q) && !/(apa\s+saja|yang\s+tersedia)/i.test(q));
     const isProcessorList = /\b(processor|cpu|prosesor|processor.*list|daftar.*processor|jenis.*processor)\b/.test(q);
     const isCompare = /\b(banding|bandingkan|perbandingan|compare|comparison|vs|versus|atau|mana.*lebih|lebih.*bagus|apa.*beda|perbedaan)\b/.test(q) && !isTkdn;
 
