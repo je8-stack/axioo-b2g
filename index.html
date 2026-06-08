@@ -492,6 +492,9 @@ Forgot Password?</a>
                         <option value="Tayang">Tayang</option>
                         <option value="No">Not Active</option>
                     </select>
+                    <button onclick="openRAG()" class="px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition shadow-sm flex items-center gap-1.5 shrink-0">
+                        <i data-lucide="bot" class="w-3.5 h-3.5"></i> Tanya AI
+                    </button>
                 </div>
             </div>
 
@@ -884,6 +887,33 @@ class="mt-12 bg-white rounded-xl border border-gray-200 p-6">
   </div>
 </div>
 
+<div id="ragModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[99999] p-4">
+  <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl flex flex-col max-h-[80vh]">
+    <div class="flex justify-between items-center p-4 border-b shrink-0">
+      <div class="flex items-center gap-2">
+        <i data-lucide="bot" class="w-5 h-5 text-purple-600"></i>
+        <h3 class="font-bold text-sm">AI Product Assistant</h3>
+      </div>
+      <button onclick="closeRAG()" class="p-1.5 hover:bg-gray-100 rounded-lg transition">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div id="ragResults" class="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
+      <div class="text-center text-gray-400 py-8">
+        <i data-lucide="message-circle" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+        <p>Tanyakan sesuatu tentang produk, spesifikasi, atau sertifikat.</p>
+        <p class="text-xs mt-1">Contoh: "Laptop dengan i7-1255U" atau "SKU dengan RAM 16GB"</p>
+      </div>
+    </div>
+    <div class="border-t p-3 flex gap-2 shrink-0">
+      <input type="text" id="ragInput" placeholder="Ketik pertanyaan Anda..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-purple-500" onkeydown="if(event.key==='Enter')queryRAG()">
+      <button onclick="queryRAG()" class="px-4 py-2 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition flex items-center gap-1.5">
+        <i data-lucide="send" class="w-3.5 h-3.5"></i> Tanya
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="previewModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-[9999]">
   <div class="bg-white w-[95%] h-[90%] rounded-xl overflow-hidden shadow-2xl flex flex-col">
     <div class="flex justify-between items-center p-3 border-b">
@@ -940,6 +970,91 @@ function showLoading(e){
     }
     requestAnimationFrame(step);
 }
+var ragData = null;
+async function loadRAGData() {
+    try {
+        const [aliases, products, tkdn] = await Promise.all([
+            fetch('aliases.json').then(r=>r.json()),
+            fetch('products.json').then(r=>r.json()),
+            fetch('tkdn.json').then(r=>r.json())
+        ]);
+        ragData = { aliases, products, tkdn };
+    } catch(e) { console.error('RAG load error', e); }
+}
+function openRAG() {
+    document.getElementById('ragModal').classList.remove('hidden');
+    document.getElementById('ragModal').classList.add('flex');
+    document.getElementById('ragInput').focus();
+    lucide.createIcons();
+}
+function closeRAG() {
+    document.getElementById('ragModal').classList.add('hidden');
+    document.getElementById('ragModal').classList.remove('flex');
+}
+function queryRAG() {
+    const q = document.getElementById('ragInput').value.trim().toLowerCase();
+    if (!q || !ragData) return;
+    const results = document.getElementById('ragResults');
+    const aliasMatch = Object.entries(ragData.aliases).filter(([k,v])=>k.toLowerCase().includes(q)||v.toLowerCase().includes(q));
+    const productMatch = ragData.products.filter(p=>
+        Object.values(p).some(v=>typeof v==='string'&&v.toLowerCase().includes(q))
+    );
+    const tkdnMatch = ragData.tkdn.filter(t=>
+        Object.values(t).some(v=>typeof v==='string'&&v.toLowerCase().includes(q))
+    );
+    let html = '';
+    const baseNames = new Set();
+    if (aliasMatch.length) {
+        html += '<div class="font-bold text-purple-700 text-xs uppercase tracking-wide mt-2">Alias / Kode Produk</div>';
+        aliasMatch.forEach(([k,v])=>{
+            baseNames.add(v);
+            const skus = ragData.tkdn.filter(t=>t.name.startsWith(v));
+            html += `<div class="bg-purple-50 border border-purple-100 rounded-lg p-3 text-xs">
+                <span class="font-bold">${k}</span> → <span class="text-purple-700">${v}</span>
+                ${skus.length ? '<div class="mt-1 text-gray-500">SKU: '+skus.map(s=>s.name).join(', ')+'</div>' : ''}
+            </div>`;
+        });
+    }
+    if (productMatch.length) {
+        html += '<div class="font-bold text-blue-700 text-xs uppercase tracking-wide mt-3">Spesifikasi Produk</div>';
+        productMatch.forEach(p=>{
+            baseNames.add(p.name);
+            html += `<div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs">
+                <div class="font-bold text-blue-900">${p.name}</div>
+                <div class="mt-1 text-gray-600 space-y-0.5">
+                    <div>CPU: ${p.processor}</div>
+                    <div>RAM: ${p.ram} | Storage: ${p.storage}</div>
+                    <div>Layar: ${p.display} | OS: ${p.os}</div>
+                    <div>GPU: ${p.graphics}</div>
+                    <div>Berat: ${p.weight} | Dimensi: ${p.dimension}</div>
+                </div>
+            </div>`;
+        });
+    }
+    if (tkdnMatch.length) {
+        html += '<div class="font-bold text-emerald-700 text-xs uppercase tracking-wide mt-3">Data TKDN & Sertifikat</div>';
+        tkdnMatch.slice(0,8).forEach(t=>{
+            html += `<div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-xs">
+                <div class="font-bold text-emerald-900">${t.name}</div>
+                <div class="mt-1 text-gray-600">TKDN+BMP: ${t.tkdn_bmp} | Status: ${t.lkpp_status}</div>
+                <div class="text-gray-500">Sertifikat: ${t.certificate_number}</div>
+                <div class="text-gray-500">Status Internal: ${t.internal_status || '-'}</div>
+            </div>`;
+        });
+        if (tkdnMatch.length > 8) html += `<div class="text-xs text-gray-400 text-center">...dan ${tkdnMatch.length-8} hasil lainnya</div>`;
+    }
+    if (!html) {
+        const suggestion = Object.keys(ragData.aliases).find(k=>k.toLowerCase().includes(q)) || '';
+        html = `<div class="text-center text-gray-400 py-8">
+            <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+            <p>Tidak ditemukan hasil untuk "${document.getElementById('ragInput').value}"</p>
+            ${suggestion ? '<p class="text-xs mt-2">Mungkin maksud: <b>'+suggestion+'</b></p>' : ''}
+        </div>`;
+    }
+    results.innerHTML = html;
+    lucide.createIcons();
+}
+loadRAGData();
 </script>
 </body>
 </html>
