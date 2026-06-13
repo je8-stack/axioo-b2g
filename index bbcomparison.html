@@ -70,7 +70,7 @@ var SPC = ["Processor","LCD","Graphics","RAM","Storage","OS","Codename","Display
 var ICO = {"OS":"OS","Processor":"CPU","BIOS":"BIOS","Graphics":"GPU","NPU":"NPU","Power":"PWR","LCD":"LCD","Sound":"SND","Connectivity":"NET","I/O Ports":"I/O","Display":"SCR","Codename":"TAG","Dimension":"DIM","Security":"SEC","Speaker":"SPK","Camera":"CAM","Storage":"STO","Design":"DSG","RAM":"RAM","Weight":"WGT","TKDN+BMP":"TKD"};
 var CAT = {"OS":"Software","Processor":"Performance","BIOS":"Platform","Graphics":"Performance","NPU":"Performance","Power":"Physical","LCD":"Display","Sound":"Features","Connectivity":"Features","I/O Ports":"Features","Display":"Display","Codename":"Platform","Dimension":"Physical","Security":"Features","Speaker":"Features","Camera":"Features","Storage":"Performance","Design":"Physical","RAM":"Performance","Weight":"Physical","TKDN+BMP":"Certification"};
 var NMS = ["MyBook Pro L7V","MyBook Prime 5 KB1","MyBook Pro 103.2","MyBook Pro A5","MyBook Pro A7","MyBook Pro A7V","MyBook Pro E1","MyBook Pro H7","MyBook Pro H8","MyBook Pro K3","MyBook Pro K7.2","MyBook Pro L3","MyBook Pro L5","MyBook Pro L7","MyBook Pro M5","MyBook Pro M7T"];
-var TKDN_BMP = {"MyBook Pro L7V":"44.97%","MyBook Prime 5 KB1":"43.49%","MyBook Pro 103.2":"47.34%","MyBook Pro A5":"42.81%","MyBook Pro A7":"42.86%","MyBook Pro A7V":"42.86%","MyBook Pro E1":"48.68%","MyBook Pro H7":"45.10%","MyBook Pro H8":"45.06%","MyBook Pro K3":"47.34%","MyBook Pro K7.2":"44.97%","MyBook Pro L3":"47.34%","MyBook Pro L5":"45.10%","MyBook Pro L7":"44.97%","MyBook Pro M5":"45.10%","MyBook Pro M7T":"44.81%"};
+var TKDN_BMP = {"MyBook Pro L7V":["Variant MyBook Pro L7V (8N5) = 44.97%","Variant MyBook Pro L7V (16N9) = 44.81%","Variant MyBook Pro L7V (32N9) = 44.81%"],"MyBook Prime 5 KB1":["Variant MyBook Prime 5 (KB1) = 43.49%"],"MyBook Pro 103.2":["Variant MyBook Pro 103.2 (4S1) = 45.81%","Variant MyBook Pro 103.2 (4S2) = 45.78%","Variant MyBook Pro 103.2 (8S2) = 47.34%","Variant MyBook Pro 103.2 (8S5) = 45.56%"],"MyBook Pro A5":["Variant MyBook Pro A5 (8N9) = 42.81%","Variant MyBook Pro A5 (16N9) = 42.80%"],"MyBook Pro A7":["Variant MyBook Pro A7 (8N9) = 42.86%","Variant MyBook Pro A7 (16N9) = 42.86%"],"MyBook Pro A7V":["Variant MyBook Pro A7V (8N9) = 42.86%","Variant MyBook Pro A7V (16N9) = 42.86%"],"MyBook Pro E1":["Variant MyBook Pro E1 (8N2) = 48.68%","Variant MyBook Pro E1 (8N5) = 47.96%","Variant MyBook Pro E1 (8N9) = 47.52%"],"MyBook Pro H7":["Variant MyBook Pro H7 (8S2) = 45.10%","Variant MyBook Pro H7 (8S5) = 45.06%","Variant MyBook Pro H7 (8S9) = 44.94%"],"MyBook Pro H8":["Variant MyBook Pro H8 (8S5) = 45.06%","Variant MyBook Pro H8 (8S9) = 44.84%","Variant MyBook Pro H8 (16S9) = 44.81%"],"MyBook Pro K3":["Variant MyBook Pro K3 (8N2) = 47.34%"],"MyBook Pro K7.2":["Variant MyBook Pro K7.2 (8N5) = 44.97%","Variant MyBook Pro K7.2 (8N9) = 44.84%","Variant MyBook Pro K7.2 (16N5) = 44.74%","Variant MyBook Pro K7.2 (16N9) = 44.81%","Variant MyBook Pro K7.2 (16N18) = 44.76%"],"MyBook Pro L3":["Variant MyBook Pro L3 (8N2) = 47.34%","Variant MyBook Pro L3 (8N5) = 45.56%","Variant MyBook Pro L3 (8N9) = 45.47%"],"MyBook Pro L5":["Variant MyBook Pro L5 (KB2) = 45.10%","Variant MyBook Pro L5 (8N5) = 45.06%"],"MyBook Pro L7":["Variant MyBook Pro L7 (8N5) = 44.97%","Variant MyBook Pro L7 (8N9) = 44.84%","Variant MyBook Pro L7 (16N9) = 44.81%","Variant MyBook Pro L7 (16N18) = 44.76%"],"MyBook Pro M5":["Variant MyBook Pro M5 (8N2) = 45.10%","Variant MyBook Pro M5 (8N5) = 45.06%","Variant MyBook Pro M5 (16N9) = 45.06%"],"MyBook Pro M7T":["Variant MyBook Pro M7T (16N9) = 44.81%","Variant MyBook Pro M7T (32N9) = 44.81%"]};
 
 var PCOLS = ["#ef4444","#f97316","#eab308","#22c55e","#14b8a6","#6366f1","#a855f7","#ec4899","#0ea5e9","#84cc16","#f43f5e","#8b5cf6","#10b981","#d946ef","#f59e0b","#06b6d4"];
 
@@ -125,10 +125,16 @@ function r() {
     dd.innerHTML = "<span class=\"sym\">" + (ICO[sp] || "") + "</span>" + sp;
     dr.appendChild(dd);
     for (var j = 0; j < sel.length; j++) {
-      var v = sp === "TKDN+BMP" ? (TKDN_BMP[sel[j]] || "") : (DATA[sel[j]] ? DATA[sel[j]][sp] || "" : "");
+      var v;
+      if (sp === "TKDN+BMP") {
+        var arr = TKDN_BMP[sel[j]];
+        v = arr && arr.length ? arr.join("<br>") : "";
+      } else {
+        v = DATA[sel[j]] ? DATA[sel[j]][sp] || "" : "";
+      }
       var td = document.createElement("td");
       td.className = v ? "c" : "c m";
-      td.textContent = v || "---";
+      if (sp === "TKDN+BMP") { td.innerHTML = v || "---"; } else { td.textContent = v || "---"; }
       dr.appendChild(td);
     }
     B.appendChild(dr);
